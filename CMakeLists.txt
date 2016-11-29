@@ -14,13 +14,16 @@ project(HunterSimple)
 
 ### Download dependencies ###
 hunter_add_package(GTest)
+hunter_add_package(OpenSSL)
 
 ### Find dependencies ###
 find_package(GTest CONFIG REQUIRED) # GTest::main
+find_package(OpenSSL REQUIRED)
+include_directories("${OPENSSL_INCLUDE_DIR}")
 
 ### Targets ###
 add_executable(simple simple.cpp)
-target_link_libraries(simple PUBLIC GTest::main)
+target_link_libraries(simple PUBLIC GTest::main ${OPENSSL_LIBRARIES})
 
 ### Testing ###
 enable_testing()
