@@ -33,7 +33,7 @@ TEST(OpenSSL, AES) {
 
     ASSERT_EQ(aes_encrypt(sourceStringTemp,key,dstStringTemp), 1);
 
-    printf("enc %d:",strlen((char*)dstStringTemp));
+    printf("enc %lu:",strlen((char*)dstStringTemp));
     for(int i= 0; dstStringTemp[i]; i+=1){
         printf("%x",(unsigned char)dstStringTemp[i]);
     }
