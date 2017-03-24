@@ -16,15 +16,17 @@ project(HunterSimple)
 ### Download dependencies ###
 hunter_add_package(GTest)
 hunter_add_package(OpenSSL)
+hunter_add_package(CURL)
 
 ### Find dependencies ###
 find_package(GTest CONFIG REQUIRED) # GTest::main
 find_package(OpenSSL REQUIRED)
+find_package(CURL CONFIG REQUIRED)
 include_directories("${OPENSSL_INCLUDE_DIR}")
 
 ### Targets ###
-add_executable(simple simple.cpp)
-target_link_libraries(simple PUBLIC GTest::main ${OPENSSL_LIBRARIES})
+add_executable(simple simple.cpp curl_test.cpp)
+target_link_libraries(simple PUBLIC GTest::main ${OPENSSL_LIBRARIES} CURL::libcurl)
 
 ### Testing ###
 enable_testing()
