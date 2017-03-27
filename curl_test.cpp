@@ -2,25 +2,32 @@
 #include "curl/curl.h"
 #include "gtest/gtest.h"
 
-static size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *userp)
+static size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *stream)
 {
-    ((std::string*)userp)->append((char*)contents, size * nmemb);
-    return size * nmemb;
+    size_t written = fwrite(contents, size, nmemb, (FILE *)stream);
+    return written;
 }
 
 TEST(Curl, simple) {
     CURL* curl = curl_easy_init();
-    std::string readBuffer;
+    const char* filename = "huiluo2.jpg";
+    FILE* file = fopen(filename, "wb");
 
     if (curl) {
-        curl_easy_setopt(curl, CURLOPT_URL, "http://www.bing.com");
+        curl_easy_setopt(curl, CURLOPT_URL, "http://cmbu-ad.cisco.com/photo/huiluo2.jpg");
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
-        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, file);
         CURLcode res = curl_easy_perform(curl);
-        curl_easy_cleanup(curl);
+        fclose(file);
 
-        ASSERT_EQ(res, CURLE_OK);
-        ASSERT_TRUE(readBuffer.length() > 0);
+        int httpCode = 0;
+        res = curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &httpCode);
+        if (res != CURLE_OK || httpCode != 200) {
+            remove(filename);
+            printf("Failed to download the file: curlCode=%d, httpCode=%d\n", res, httpCode);
+        }
+
+        curl_easy_cleanup(curl);
     }
 }
 
