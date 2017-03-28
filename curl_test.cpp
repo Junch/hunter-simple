@@ -1,6 +1,11 @@
 #include <stdio.h>
+#include <array>
+#include <string>
+#include <memory>
+#include <map>
 #include "curl/curl.h"
 #include "gtest/gtest.h"
+#include "string_format.h"
 
 static size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *stream)
 {
@@ -35,40 +40,60 @@ TEST(Curl, simple) {
 
 #define MAX_WAIT_MSECS 30*1000 /* Wait max. 30 seconds */
 
-static const char *urls[] = {
-  "http://www.bing.com",
-  "http://www.baidu.com",
-  "http://www.microsoft.com",
-  "http://www.google.com",
-  "http://www.wikipedia.org"
+struct Node {
+    Node(const char* name){
+        url = string_format("http://cmbu-ad.cisco.com/photo/%s.jpg", name);
+        filename = string_format("%s.jpg", name);
+        file = fopen(filename.c_str(), "wb");
+    }
+
+    FILE* file;
+    std::string url;
+    std::string filename;
 };
 
-static size_t cb(char *d, size_t n, size_t l, void *p)
+std::array<const char*, 21> names = {
+  "chaowei", "cheluo", "chenxzha", "cyshen", "gamao",
+  "huiluo", "jizh", "jinkgao", "juyan", "juphan",
+  "liatang", "libliang","lilli", "mingwa", "nhaotian",
+  "qiozhang", "quxie", "stigao", "wazhu", "xumei", "jzhichen"
+};
+
+static size_t cb(char *contents, size_t size, size_t nmemb, void *user)
 {
-    /* take care of the data here, ignored in this example */
-    (void)d;
-    (void)p;
-    return n*l;
+    Node* node = reinterpret_cast<Node*>(user);
+    FILE* file = node->file;
+    size_t written = fwrite(contents, size, nmemb, file);
+    return written;
 }
 
-static void init(CURLM *cm, int i)
+std::map<CURL*, std::shared_ptr<Node>> gActiveTransfers;
+
+static void init(CURLM *cm, const char* name)
 {
+    std::shared_ptr<Node> pNode = std::make_shared<Node>(name);
     CURL *eh = curl_easy_init();
     curl_easy_setopt(eh, CURLOPT_WRITEFUNCTION, cb);
     curl_easy_setopt(eh, CURLOPT_HEADER, 0L);
-    curl_easy_setopt(eh, CURLOPT_URL, urls[i]);
-    curl_easy_setopt(eh, CURLOPT_PRIVATE, urls[i]);
+    curl_easy_setopt(eh, CURLOPT_URL, pNode->url.c_str());
+    curl_easy_setopt(eh, CURLOPT_PRIVATE, pNode->url.c_str());
     curl_easy_setopt(eh, CURLOPT_VERBOSE, 0L);
     curl_easy_setopt(eh, CURLOPT_FOLLOWLOCATION, 1L);
+    curl_easy_setopt(eh, CURLOPT_WRITEDATA, pNode.get());
     curl_multi_add_handle(cm, eh);
+    gActiveTransfers[eh] = pNode;
 }
 
 TEST(Curl, multi) {
     curl_global_init(CURL_GLOBAL_ALL);
 
     CURLM* cm = curl_multi_init();
-    for (int i = 0; i < 5; ++i) {
-        init(cm, i);
+    for (int i = 0; i < names.size(); ++i) {
+        init(cm, names[i]);
+        for (int j=1; j<10; ++j) {
+            std::string myName = string_format("%s%d", names[i], j);
+            init(cm, myName.c_str());
+        }
     }
 
     int still_running = 0;
@@ -102,10 +127,24 @@ TEST(Curl, multi) {
             curl_easy_getinfo(eh, CURLINFO_RESPONSE_CODE, &http_status_code);
             curl_easy_getinfo(eh, CURLINFO_PRIVATE, &szUrl);
 
+            std::shared_ptr<Node> node = nullptr;
+            auto iter = gActiveTransfers.find(eh);
+            if (iter != gActiveTransfers.end()) {
+                node = iter->second;
+                gActiveTransfers.erase(eh);
+            }
+            else {
+                fprintf(stderr, "The internal data object was not found in the map");
+                continue;
+            }
+
+            fclose(node->file);
+
             if (http_status_code == 200) {
                 printf("200 OK for %s\n", szUrl);
             }
             else {
+                remove(node->filename.c_str());
                 fprintf(stderr, "GET of %s returned http status code %d\n", szUrl, http_status_code);
             }
 

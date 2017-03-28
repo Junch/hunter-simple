@@ -25,7 +25,7 @@ find_package(CURL CONFIG REQUIRED)
 include_directories("${OPENSSL_INCLUDE_DIR}")
 
 ### Targets ###
-add_executable(simple simple.cpp curl_test.cpp)
+add_executable(simple simple.cpp curl_test.cpp string_format.cpp)
 target_link_libraries(simple PUBLIC GTest::main ${OPENSSL_LIBRARIES} CURL::libcurl)
 
 ### Testing ###
