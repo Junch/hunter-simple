@@ -6,8 +6,8 @@ cmake_minimum_required(VERSION 3.0)
 ### Hunter snapshot that will be used ###
 include("cmake/HunterGate.cmake")
 HunterGate(
-    URL "https://github.com/ruslo/hunter/archive/v0.16.34.tar.gz"
-    SHA1 "9a7b420de4b288020b02f68d8aa827c0959a52bf"
+    URL "https://github.com/ruslo/hunter/archive/v0.18.27.tar.gz"
+    SHA1 "dcc5416d24b536856c780edc1ba7cc3087487eeb"
     LOCAL
 )
 

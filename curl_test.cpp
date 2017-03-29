@@ -14,6 +14,9 @@ static size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *str
 }
 
 TEST(Curl, simple) {
+    curl_version_info_data *ver = curl_version_info(CURLVERSION_NOW);
+    printf("CURL Ver: %s\n", ver->version);
+
     CURL* curl = curl_easy_init();
     const char* filename = "huiluo2.jpg";
     FILE* file = fopen(filename, "wb");
@@ -22,14 +25,18 @@ TEST(Curl, simple) {
         curl_easy_setopt(curl, CURLOPT_URL, "http://cmbu-ad.cisco.com/photo/huiluo2.jpg");
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, file);
+        curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT_MS, 2000L);
         CURLcode res = curl_easy_perform(curl);
         fclose(file);
 
         int httpCode = 0;
-        res = curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &httpCode);
-        if (res != CURLE_OK || httpCode != 200) {
+        curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &httpCode);
+        if (res != CURLE_OK) {
             remove(filename);
-            printf("Failed to download the file: curlCode=%d, httpCode=%d\n", res, httpCode);
+            printf("Failed to download the file: curlCode=%d: %s\n", res, curl_easy_strerror(res));
+        }else if(httpCode != 200) {
+            remove(filename);
+            printf("Failed to download the file: httpCode=%d\n", httpCode);
         }
 
         curl_easy_cleanup(curl);
@@ -80,6 +87,8 @@ static void init(CURLM *cm, const char* name)
     curl_easy_setopt(eh, CURLOPT_VERBOSE, 0L);
     curl_easy_setopt(eh, CURLOPT_FOLLOWLOCATION, 1L);
     curl_easy_setopt(eh, CURLOPT_WRITEDATA, pNode.get());
+    curl_easy_setopt(eh, CURLOPT_TIMEOUT_MS, 0L);
+    curl_easy_setopt(eh, CURLOPT_CONNECTTIMEOUT_MS, 2000L);
     curl_multi_add_handle(cm, eh);
     gActiveTransfers[eh] = pNode;
 }
@@ -97,8 +106,6 @@ TEST(Curl, multi) {
     }
 
     int still_running = 0;
-    curl_multi_perform(cm, &still_running);
-
     do {
         int numfds = 0;
         int res = curl_multi_wait(cm, NULL, 0, MAX_WAIT_MSECS, &numfds);
@@ -116,7 +123,7 @@ TEST(Curl, multi) {
 
             CURLcode return_code = msg->data.result;
             if (return_code != CURLE_OK) {
-                fprintf(stderr, "CURL error code: %d\n", msg->data.result);
+                fprintf(stderr, "CURL error code: %d, %s\n", msg->data.result, curl_easy_strerror(msg->data.result));
                 continue;
             }
 
@@ -126,6 +133,9 @@ TEST(Curl, multi) {
 
             curl_easy_getinfo(eh, CURLINFO_RESPONSE_CODE, &http_status_code);
             curl_easy_getinfo(eh, CURLINFO_PRIVATE, &szUrl);
+
+            char* effective_url = NULL;
+            curl_easy_getinfo(eh, CURLINFO_EFFECTIVE_URL, &effective_url);
 
             std::shared_ptr<Node> node = nullptr;
             auto iter = gActiveTransfers.find(eh);
@@ -141,7 +151,7 @@ TEST(Curl, multi) {
             fclose(node->file);
 
             if (http_status_code == 200) {
-                printf("200 OK for %s\n", szUrl);
+                printf("200 OK for %s. Effective_URL: effective_url%s\n", szUrl, effective_url);
             }
             else {
                 remove(node->filename.c_str());
