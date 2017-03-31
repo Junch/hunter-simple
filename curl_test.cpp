@@ -43,6 +43,37 @@ TEST(Curl, simple) {
     }
 }
 
+TEST(Curl, simple2) {
+    curl_version_info_data *ver = curl_version_info(CURLVERSION_NOW);
+    printf("CURL Ver: %s\n", ver->version);
+
+    std::unique_ptr<CURL, void(*)(CURL*)> eh(curl_easy_init(), curl_easy_cleanup);
+    const char* filename = "huiluo3.jpg";
+
+    FILE* file = fopen(filename, "wb");
+    // auto file_closer = [] (FILE* fi) { std::fclose(fi); };
+    // std::unique_ptr<FILE, void(*)(FILE*)> filePtr(file, file_closer);
+
+    if (eh) {
+        curl_easy_setopt(eh.get(), CURLOPT_URL, "http://cmbu-ad.cisco.com/photo/huiluo3.jpg");
+        curl_easy_setopt(eh.get(), CURLOPT_WRITEFUNCTION, WriteCallback);
+        curl_easy_setopt(eh.get(), CURLOPT_WRITEDATA, file);
+        curl_easy_setopt(eh.get(), CURLOPT_CONNECTTIMEOUT_MS, 2000L);
+        CURLcode res = curl_easy_perform(eh.get());
+        fclose(file);
+
+        int httpCode = 0;
+        curl_easy_getinfo(eh.get(), CURLINFO_RESPONSE_CODE, &httpCode);
+        if (res != CURLE_OK) {
+            remove(filename);
+            printf("Failed to download the file: curlCode=%d: %s\n", res, curl_easy_strerror(res));
+        }else if(httpCode != 200) {
+            remove(filename);
+            printf("Failed to download the file: httpCode=%d\n", httpCode);
+        }
+    }
+}
+
 // https://gist.github.com/clemensg/4960504
 
 #define MAX_WAIT_MSECS 30*1000 /* Wait max. 30 seconds */
@@ -89,6 +120,7 @@ static void init(CURLM *cm, const char* name)
     curl_easy_setopt(eh, CURLOPT_WRITEDATA, pNode.get());
     curl_easy_setopt(eh, CURLOPT_TIMEOUT_MS, 0L);
     curl_easy_setopt(eh, CURLOPT_CONNECTTIMEOUT_MS, 2000L);
+    curl_easy_setopt(eh, CURLOPT_NOSIGNAL, 1L);
     curl_multi_add_handle(cm, eh);
     gActiveTransfers[eh] = pNode;
 }
@@ -151,7 +183,7 @@ TEST(Curl, multi) {
             fclose(node->file);
 
             if (http_status_code == 200) {
-                printf("200 OK for %s. Effective_URL: effective_url%s\n", szUrl, effective_url);
+                printf("200 OK for %s. effective_URL:%s\n", szUrl, effective_url);
             }
             else {
                 remove(node->filename.c_str());
