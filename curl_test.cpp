@@ -17,21 +17,22 @@ TEST(Curl, simple) {
     curl_version_info_data *ver = curl_version_info(CURLVERSION_NOW);
     printf("CURL Ver: %s\n", ver->version);
 
-    CURL* curl = curl_easy_init();
+    CURL* eh = curl_easy_init();
     const char* filename = "huiluo2.jpg";
     FILE* file = fopen(filename, "wb");
 
-    if (curl) {
-        curl_easy_setopt(curl, CURLOPT_URL, "http://cmbu-ad.cisco.com/photo/huiluo2.jpg");
-        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
-        curl_easy_setopt(curl, CURLOPT_WRITEDATA, file);
-        curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT_MS, 6000L);
-        curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
-        CURLcode res = curl_easy_perform(curl);
+    if (eh) {
+        curl_easy_setopt(eh, CURLOPT_URL, "http://cmbu-ad.cisco.com/photo/huiluo2.jpg");
+        curl_easy_setopt(eh, CURLOPT_WRITEFUNCTION, WriteCallback);
+        curl_easy_setopt(eh, CURLOPT_WRITEDATA, file);
+        curl_easy_setopt(eh, CURLOPT_CONNECTTIMEOUT_MS, 6000L);
+        curl_easy_setopt(eh, CURLOPT_VERBOSE, 1L);
+        CURLcode res = curl_easy_perform(eh);
         fclose(file);
-
+      
         int httpCode = 0;
-        curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &httpCode);
+        curl_easy_getinfo(eh, CURLINFO_RESPONSE_CODE, &httpCode);
+
         if (res != CURLE_OK) {
             remove(filename);
             printf("Failed to download the file: curlCode=%d: %s\n", res, curl_easy_strerror(res));
@@ -40,7 +41,7 @@ TEST(Curl, simple) {
             printf("Failed to download the file: httpCode=%d\n", httpCode);
         }
 
-        curl_easy_cleanup(curl);
+        curl_easy_cleanup(eh);
     }
 }
 
@@ -115,7 +116,7 @@ static void init(CURLM *cm, const char* name)
     curl_easy_setopt(eh, CURLOPT_WRITEFUNCTION, cb);
     curl_easy_setopt(eh, CURLOPT_HEADER, 0L);
     curl_easy_setopt(eh, CURLOPT_URL, pNode->url.c_str());
-    // curl_easy_setopt(eh, CURLOPT_PRIVATE, pNode->url.c_str());
+    curl_easy_setopt(eh, CURLOPT_PRIVATE, pNode->url.c_str());
     curl_easy_setopt(eh, CURLOPT_VERBOSE, 0L);
     curl_easy_setopt(eh, CURLOPT_FOLLOWLOCATION, 1L);
     curl_easy_setopt(eh, CURLOPT_WRITEDATA, pNode.get());
@@ -161,6 +162,15 @@ TEST(Curl, multi) {
             }
 
             CURL *eh = msg->easy_handle;
+
+            // Uncomment the lines below will cause segmentation fault on Mac. Reason not clear
+            // {
+            //     int http_status_code = 0;
+            //     curl_easy_getinfo(eh, CURLINFO_RESPONSE_CODE, &http_status_code);
+
+            //     char* effective_url = NULL;
+            //     curl_easy_getinfo(eh, CURLINFO_EFFECTIVE_URL, &effective_url);
+            // }
 
             std::shared_ptr<Node> node = nullptr;
             auto iter = gActiveTransfers.find(eh);
