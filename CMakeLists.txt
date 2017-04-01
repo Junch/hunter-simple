@@ -13,6 +13,8 @@ HunterGate(
 
 project(HunterSimple)
 
+add_compile_options(-std=c++11)
+
 ### Download dependencies ###
 hunter_add_package(GTest)
 hunter_add_package(OpenSSL)

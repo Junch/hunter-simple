@@ -25,7 +25,8 @@ TEST(Curl, simple) {
         curl_easy_setopt(curl, CURLOPT_URL, "http://cmbu-ad.cisco.com/photo/huiluo2.jpg");
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, file);
-        curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT_MS, 2000L);
+        curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT_MS, 6000L);
+        curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
         CURLcode res = curl_easy_perform(curl);
         fclose(file);
 
@@ -58,7 +59,7 @@ TEST(Curl, simple2) {
         curl_easy_setopt(eh.get(), CURLOPT_URL, "http://cmbu-ad.cisco.com/photo/huiluo3.jpg");
         curl_easy_setopt(eh.get(), CURLOPT_WRITEFUNCTION, WriteCallback);
         curl_easy_setopt(eh.get(), CURLOPT_WRITEDATA, file);
-        curl_easy_setopt(eh.get(), CURLOPT_CONNECTTIMEOUT_MS, 2000L);
+        curl_easy_setopt(eh.get(), CURLOPT_CONNECTTIMEOUT_MS, 6000L);
         CURLcode res = curl_easy_perform(eh.get());
         fclose(file);
 
@@ -114,12 +115,12 @@ static void init(CURLM *cm, const char* name)
     curl_easy_setopt(eh, CURLOPT_WRITEFUNCTION, cb);
     curl_easy_setopt(eh, CURLOPT_HEADER, 0L);
     curl_easy_setopt(eh, CURLOPT_URL, pNode->url.c_str());
-    curl_easy_setopt(eh, CURLOPT_PRIVATE, pNode->url.c_str());
+    // curl_easy_setopt(eh, CURLOPT_PRIVATE, pNode->url.c_str());
     curl_easy_setopt(eh, CURLOPT_VERBOSE, 0L);
     curl_easy_setopt(eh, CURLOPT_FOLLOWLOCATION, 1L);
     curl_easy_setopt(eh, CURLOPT_WRITEDATA, pNode.get());
     curl_easy_setopt(eh, CURLOPT_TIMEOUT_MS, 0L);
-    curl_easy_setopt(eh, CURLOPT_CONNECTTIMEOUT_MS, 2000L);
+    curl_easy_setopt(eh, CURLOPT_CONNECTTIMEOUT_MS, 6000L);
     curl_easy_setopt(eh, CURLOPT_NOSIGNAL, 1L);
     curl_multi_add_handle(cm, eh);
     gActiveTransfers[eh] = pNode;
@@ -160,14 +161,6 @@ TEST(Curl, multi) {
             }
 
             CURL *eh = msg->easy_handle;
-            int http_status_code = 0;
-            const char* szUrl = NULL;
-
-            curl_easy_getinfo(eh, CURLINFO_RESPONSE_CODE, &http_status_code);
-            curl_easy_getinfo(eh, CURLINFO_PRIVATE, &szUrl);
-
-            char* effective_url = NULL;
-            curl_easy_getinfo(eh, CURLINFO_EFFECTIVE_URL, &effective_url);
 
             std::shared_ptr<Node> node = nullptr;
             auto iter = gActiveTransfers.find(eh);
@@ -182,14 +175,16 @@ TEST(Curl, multi) {
 
             fclose(node->file);
 
+            int http_status_code = 0;
+            curl_easy_getinfo(eh, CURLINFO_RESPONSE_CODE, &http_status_code);
             if (http_status_code == 200) {
-                printf("200 OK for %s. effective_URL:%s\n", szUrl, effective_url);
+                printf("200 OK for %s\n", node->url.c_str());
             }
             else {
                 remove(node->filename.c_str());
-                fprintf(stderr, "GET of %s returned http status code %d\n", szUrl, http_status_code);
+                fprintf(stderr, "GET of %s returned http status code %d\n", node->url.c_str(), http_status_code);
             }
-
+            
             curl_multi_remove_handle(cm, eh);
             curl_easy_cleanup(eh);
         }
