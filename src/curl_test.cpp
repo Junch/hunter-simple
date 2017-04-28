@@ -13,7 +13,7 @@ static size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *str
     return written;
 }
 
-TEST(Curl, simple) {
+TEST(curl, simple) {
     curl_version_info_data *ver = curl_version_info(CURLVERSION_NOW);
     printf("CURL Ver: %s\n", ver->version);
 
@@ -45,7 +45,7 @@ TEST(Curl, simple) {
     }
 }
 
-TEST(Curl, simple2) {
+TEST(curl, simple2) {
     curl_version_info_data *ver = curl_version_info(CURLVERSION_NOW);
     printf("CURL Ver: %s\n", ver->version);
 
@@ -92,7 +92,7 @@ struct Node {
     std::string filename;
 };
 
-std::array<const char*, 21> names = {
+static std::array<const char*, 21> names = {
   "chaowei", "cheluo", "chenxzha", "cyshen", "gamao",
   "huiluo", "jizh", "jinkgao", "juyan", "juphan",
   "liatang", "libliang","lilli", "mingwa", "nhaotian",
@@ -127,11 +127,11 @@ static void init(CURLM *cm, const char* name)
     gActiveTransfers[eh] = pNode;
 }
 
-TEST(Curl, multi) {
+TEST(curl, multi) {
     curl_global_init(CURL_GLOBAL_ALL);
 
     CURLM* cm = curl_multi_init();
-    for (int i = 0; i < names.size(); ++i) {
+    for (size_t i = 0; i < names.size(); ++i) {
         init(cm, names[i]);
         for (int j=1; j<10; ++j) {
             std::string myName = string_format("%s%d", names[i], j);

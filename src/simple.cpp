@@ -19,7 +19,7 @@ int aes_encrypt(char* in, char* key, char* out)
     return 1;
 }
 
-TEST(OpenSSL, AES) {
+TEST(openssl, aes) {
 	char sourceStringTemp[MSG_LEN];
     char dstStringTemp[MSG_LEN];
     memset((char*)sourceStringTemp, 0 ,MSG_LEN);
@@ -41,6 +41,6 @@ TEST(OpenSSL, AES) {
 }
 
 
-TEST(Simple, simple) {
+TEST(simple, simple) {
   ASSERT_EQ(1 + 1, 2);
 }
