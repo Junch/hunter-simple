@@ -26,19 +26,24 @@ add_compile_options(-std=c++11)
 hunter_add_package(GTest)
 hunter_add_package(OpenSSL)
 hunter_add_package(CURL)
+hunter_add_package(Boost)
 
 ### Find dependencies ###
 find_package(GTest CONFIG REQUIRED) # GTest::main
 find_package(OpenSSL REQUIRED)
 find_package(CURL CONFIG REQUIRED)
+find_package(Boost CONFIG REQUIRED)
 include_directories("${OPENSSL_INCLUDE_DIR}")
 
 ### Targets ###
 file(GLOB SRC_FILES ${PROJECT_SOURCE_DIR}/src/*.cpp)
 add_executable(simple ${SRC_FILES})
-target_link_libraries(simple PUBLIC GTest::main ${OPENSSL_LIBRARIES} CURL::libcurl)
-# Suppress link warnings LNK4099
-set_target_properties(simple PROPERTIES LINK_FLAGS "/ignore:4099")
+target_link_libraries(simple PUBLIC GTest::main ${OPENSSL_LIBRARIES} CURL::libcurl Boost::boost)
+
+if(MSVC)
+  # Suppress link warnings LNK4099
+  set_target_properties(simple PROPERTIES LINK_FLAGS "/ignore:4099")
+endif()
 
 ### Testing ###
 enable_testing()
