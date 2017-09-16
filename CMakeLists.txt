@@ -20,7 +20,7 @@ if(MSVC)
   set(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} /DEBUG /OPT:REF /OPT:ICF")
 endif()
 
-add_compile_options(-std=c++11)
+add_compile_options(-std=c++14)
 
 ### Download dependencies ###
 hunter_add_package(GTest)
@@ -34,6 +34,7 @@ find_package(OpenSSL REQUIRED)
 find_package(CURL CONFIG REQUIRED)
 find_package(Boost CONFIG REQUIRED)
 include_directories("${OPENSSL_INCLUDE_DIR}")
+include_directories("di/include")
 
 ### Targets ###
 file(GLOB SRC_FILES ${PROJECT_SOURCE_DIR}/src/*.cpp)
