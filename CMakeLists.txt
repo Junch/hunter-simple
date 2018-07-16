@@ -6,8 +6,8 @@ cmake_minimum_required(VERSION 3.0)
 ### Hunter snapshot that will be used ###
 include("cmake/HunterGate.cmake")
 HunterGate(
-  URL "https://github.com/ruslo/hunter/archive/v0.18.27.tar.gz"
-  SHA1 "dcc5416d24b536856c780edc1ba7cc3087487eeb"
+  URL "https://github.com/ruslo/hunter/archive/v0.22.31.tar.gz"
+  SHA1 "80b45f6182151d235bded7c3d3a818e84851521f"
   LOCAL
 )
 
@@ -27,19 +27,21 @@ hunter_add_package(GTest)
 hunter_add_package(OpenSSL)
 hunter_add_package(CURL)
 hunter_add_package(Boost)
+hunter_add_package(ICU)
 
 ### Find dependencies ###
 find_package(GTest CONFIG REQUIRED) # GTest::main
 find_package(OpenSSL REQUIRED)
 find_package(CURL CONFIG REQUIRED)
 find_package(Boost CONFIG REQUIRED)
+find_package(ICU CONFIG REQUIRED)
 include_directories("${OPENSSL_INCLUDE_DIR}")
 include_directories("di/include")
 
 ### Targets ###
 file(GLOB SRC_FILES ${PROJECT_SOURCE_DIR}/src/*.cpp)
 add_executable(simple ${SRC_FILES})
-target_link_libraries(simple PUBLIC GTest::main ${OPENSSL_LIBRARIES} CURL::libcurl Boost::boost)
+target_link_libraries(simple PUBLIC GTest::main ${OPENSSL_LIBRARIES} CURL::libcurl Boost::boost ICU::uc)
 
 if(MSVC)
   # Suppress link warnings LNK4099
