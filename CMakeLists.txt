@@ -38,6 +38,9 @@ find_package(ICU CONFIG REQUIRED)
 include_directories("${OPENSSL_INCLUDE_DIR}")
 include_directories("di/include")
 
+#CMake doesn't generate compile_commands.json on Windows when the compiler is from VS
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 ### Targets ###
 file(GLOB SRC_FILES ${PROJECT_SOURCE_DIR}/src/*.cpp)
 add_executable(simple ${SRC_FILES})
