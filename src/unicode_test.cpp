@@ -180,14 +180,14 @@ INSTANTIATE_TEST_CASE_P
     UNICODE, InitialsUtilsUnitTest, ::testing::Values
     (
         std::pair<std::string, std::string>("", ""),
-        std::pair<std::string, std::string>("李", "李"),
-        std::pair<std::string, std::string>("李 白", "李白"),
-        std::pair<std::string, std::string>("白 居易", "白居"),
-        std::pair<std::string, std::string>("八大-山人", "八"),
-        std::pair<std::string, std::string>("李 白 Li", "李白L"),
-        std::pair<std::string, std::string>("李 白 (唐代诗人)", "李白"),
-        std::pair<std::string, std::string>("李白  唐代诗人", "李唐"),
-        std::pair<std::string, std::string>("李 🈚白", "李")
+        std::pair<std::string, std::string>(u8"李", u8"李"),
+        std::pair<std::string, std::string>(u8"李 白", u8"李白"),
+        std::pair<std::string, std::string>(u8"白 居易", u8"白居"),
+        std::pair<std::string, std::string>(u8"八大-山人", u8"八"),
+        std::pair<std::string, std::string>(u8"李 白 Li", u8"李白L"),
+        std::pair<std::string, std::string>(u8"李 白 (唐代诗人)", u8"李白"),
+        std::pair<std::string, std::string>(u8"李白  唐代诗人", u8"李唐"),
+        std::pair<std::string, std::string>(u8"李 🈚白", u8"李")
 	)
 );
 // clang-format on
