@@ -1,4 +1,5 @@
 ﻿#include <gtest/gtest.h>
+#include <gmock/gmock.h>
 #define U_STATIC_IMPLEMENTATION
 #include <unicode/uchar.h>
 #include <unicode/unistr.h>
@@ -129,4 +130,69 @@ TEST(UNICODE, unicode_str)
 
     ::MessageBoxW(NULL, content.c_str(), title.c_str(), MB_OK);
 #endif
+}
+
+std::string getInitials(const std::string &displayName)
+{
+    std::string initials;
+    bool append = true;
+
+    const uint8_t *ptr = reinterpret_cast<const uint8_t *>(displayName.data());
+    for (int i = 0, count = 0, length = displayName.length(); i < length; ++count)
+    {
+        int32_t offset = 0;
+        UChar32 c = 0;
+        U8_NEXT(ptr + i, offset, length, c);
+        if (c == ' ')
+        {
+            append = true;
+        }
+        else if (!u_isalnum(c))
+        {
+            break;
+        }
+        else if (append)
+        {
+            std::string sub = displayName.substr(i, offset);
+            initials.append(sub);
+            append = false;
+        }
+
+        i += offset;
+    }
+
+    return initials;
+}
+
+class InitialsUtilsUnitTest : public testing::TestWithParam<std::pair<std::string, std::string>>
+{
+  public:
+    void SetUp() {}
+    void TearDown() {}
+
+    static void SetUpTestCase() {}
+    static void TearDownTestCase() {}
+};
+
+// clang-format off
+INSTANTIATE_TEST_CASE_P
+(
+    UNICODE, InitialsUtilsUnitTest, ::testing::Values
+    (
+        std::pair<std::string, std::string>("", ""),
+        std::pair<std::string, std::string>("李", "李"),
+        std::pair<std::string, std::string>("李 白", "李白"),
+        std::pair<std::string, std::string>("白 居易", "白居"),
+        std::pair<std::string, std::string>("八大-山人", "八"),
+        std::pair<std::string, std::string>("李 白 Li", "李白L"),
+        std::pair<std::string, std::string>("李 白 (唐代诗人)", "李白"),
+        std::pair<std::string, std::string>("李白  唐代诗人", "李唐"),
+        std::pair<std::string, std::string>("李 🈚白", "李")
+	)
+);
+// clang-format on
+
+TEST_P(InitialsUtilsUnitTest, getInitials)
+{
+    ASSERT_THAT(getInitials(GetParam().first), ::testing::StrEq(GetParam().second));
 }
