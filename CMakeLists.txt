@@ -28,6 +28,7 @@ hunter_add_package(OpenSSL)
 hunter_add_package(CURL)
 hunter_add_package(Boost)
 hunter_add_package(ICU)
+hunter_add_package(OpenCV)
 
 ### Find dependencies ###
 find_package(GTest CONFIG REQUIRED) # GTest::main
@@ -35,6 +36,7 @@ find_package(OpenSSL REQUIRED)
 find_package(CURL CONFIG REQUIRED)
 find_package(Boost CONFIG REQUIRED)
 find_package(ICU CONFIG REQUIRED)
+find_package(OpenCV REQUIRED)
 include_directories("${OPENSSL_INCLUDE_DIR}")
 include_directories("di/include")
 
@@ -44,7 +46,21 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 ### Targets ###
 file(GLOB SRC_FILES ${PROJECT_SOURCE_DIR}/src/*.cpp)
 add_executable(simple ${SRC_FILES})
-target_link_libraries(simple PUBLIC GTest::main ${OPENSSL_LIBRARIES} CURL::libcurl Boost::boost ICU::uc)
+target_link_libraries(simple PUBLIC GTest::main ${OPENSSL_LIBRARIES} CURL::libcurl Boost::boost ICU::uc ${OpenCV_LIBS})
+if(CMAKE_HOST_WIN32)
+  add_custom_command(TARGET simple POST_BUILD
+                    COMMAND ${CMAKE_COMMAND} -E copy_directory
+                        ${CMAKE_CURRENT_SOURCE_DIR}/data
+                        ${CMAKE_CURRENT_BINARY_DIR}/data
+                    )
+
+else()
+  add_custom_command(TARGET simple POST_BUILD
+                    COMMAND ${CMAKE_COMMAND} -E create_symlink
+                        ${CMAKE_CURRENT_SOURCE_DIR}/data
+                        ${CMAKE_CURRENT_BINARY_DIR}/data
+                    )
+endif()
 
 if(MSVC)
   # Suppress link warnings LNK4099
