@@ -3,6 +3,7 @@
 #include <stdarg.h>
 
 // http://stackoverflow.com/questions/23157530/vsnprintf-on-mac-gives-exc-bad-access
+// http://www.martinbroadhurst.com/string-formatting-in-c.html
 std::string string_format(const char* fmt, ...) {
     va_list args;
     va_start(args, fmt);

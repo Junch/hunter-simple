@@ -21,6 +21,7 @@ if(MSVC)
 endif()
 
 add_compile_options(-std=c++14)
+set (CMAKE_CXX_STANDARD 14)
 
 ### Download dependencies ###
 hunter_add_package(GTest)
@@ -29,6 +30,8 @@ hunter_add_package(CURL)
 hunter_add_package(Boost)
 hunter_add_package(ICU)
 hunter_add_package(OpenCV)
+hunter_add_package(glog)
+find_library(FOLLY_LIBRARY folly)
 
 ### Find dependencies ###
 find_package(GTest CONFIG REQUIRED) # GTest::main
@@ -37,6 +40,7 @@ find_package(CURL CONFIG REQUIRED)
 find_package(Boost CONFIG REQUIRED)
 find_package(ICU CONFIG REQUIRED)
 find_package(OpenCV REQUIRED)
+find_package(glog CONFIG REQUIRED)
 include_directories("${OPENSSL_INCLUDE_DIR}")
 include_directories("di/include")
 
@@ -45,8 +49,17 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 ### Targets ###
 file(GLOB SRC_FILES ${PROJECT_SOURCE_DIR}/src/*.cpp)
+
+if (NOT FOLLY_LIBRARY)
+  list(REMOVE_ITEM SRC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/folly.cpp)
+endif()
+
 add_executable(simple ${SRC_FILES})
-target_link_libraries(simple PUBLIC GTest::main ${OPENSSL_LIBRARIES} CURL::libcurl Boost::boost ICU::uc ${OpenCV_LIBS})
+target_link_libraries(simple PUBLIC GTest::main ${OPENSSL_LIBRARIES} CURL::libcurl Boost::boost ICU::uc ${OpenCV_LIBS} glog::glog)
+if (FOLLY_LIBRARY)
+  target_link_libraries(simple PUBLIC ${FOLLY_LIBRARY})
+endif()
+
 if(CMAKE_HOST_WIN32)
   add_custom_command(TARGET simple POST_BUILD
                     COMMAND ${CMAKE_COMMAND} -E copy_directory
