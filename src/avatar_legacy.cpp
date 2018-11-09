@@ -117,7 +117,6 @@ cv::Mat transformImage(const cv::Mat &image, int size)
     // Reget the image fragment with smoothed mask
     cv::Mat res;
     cv::merge(ch_img, res);
-    // cv::merge(ch_bg, bg);
 
     // resize to representation size
     cv::resize(res, res, cv::Size(size, size), 0.0, 0.0,
@@ -130,12 +129,12 @@ cv::Mat transformImage(const cv::Mat &image, int size)
 
 TEST(avatar, performance)
 {
-#define N 7
+#define N 9
 
     std::array<cv::Mat, N> mats;
     for (int i = 0; i < mats.size(); ++i)
     {
-        std::string path = string_format("./data/p%d.png", i);
+        std::string path = string_format("./data/performance/p%d.png", i);
         mats[i] = cv::imread(path, CV_LOAD_IMAGE_UNCHANGED);
     }
 
@@ -152,7 +151,7 @@ TEST(avatar, performance)
 
     auto end = std::chrono::high_resolution_clock::now();
     auto delta = std::chrono::duration_cast<std::chrono::duration<double>>(end - start);
-    std::cout << "old seconds = " << delta.count() << '\n';
+    std::cout << "legacy take seconds: " << delta.count() << '\n';
 
     for (int i = 0; i < results.size(); ++i)
     {

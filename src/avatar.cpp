@@ -214,12 +214,12 @@ TEST(avatar, mario)
 
 TEST(avatar, performance)
 {
-#define N 7
+#define N 9
 
     std::array<cv::Mat, N> mats;
     for (int i = 0; i < mats.size(); ++i)
     {
-        std::string path = string_format("./data/p%d.png", i);
+        std::string path = string_format("./data/performance/p%d.png", i);
         mats[i] = cv::imread(path, CV_LOAD_IMAGE_UNCHANGED);
     }
 
@@ -245,7 +245,7 @@ TEST(avatar, performance)
 
     auto end = std::chrono::high_resolution_clock::now();
     auto delta = std::chrono::duration_cast<std::chrono::duration<double>>(end - start);
-    std::cout << "new seconds = " << delta.count() << '\n';
+    std::cout << "take seconds: " << delta.count() << '\n';
 
     for (int i = 0; i < results.size(); ++i)
     {
