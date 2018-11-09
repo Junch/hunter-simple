@@ -1,3 +1,4 @@
+#include "string_format.h"
 #include <chrono>
 #include <gtest/gtest.h>
 #include <opencv2/highgui/highgui_c.h>
@@ -35,7 +36,6 @@ AvatarGenerator::AvatarGenerator(cv::Mat image) : mat_(std::move(image))
     else
     {
         CV_Assert(!"Unexpected channels");
-        throw std::runtime_error("Unexpected number of channels");
     }
 }
 
@@ -95,12 +95,10 @@ void AvatarGenerator::crop()
 //     mat_.forEach<Pixel>([&mask, &result, &alphaChannel](Pixel &pixel, const int *po) {
 //         float alpha = mask.at<float>(po[0], po[1]);
 //         float belta = alphaChannel.at<float>(po[0], po[1]);
-//         if (alpha != 0.0f && belta != 0.0f)
-//         {
-//             result.at<cv::Vec4f>(po[0], po[1]) = {
-//                 pixel.x * alpha + 1.0f - alpha, pixel.y * alpha + 1.0f - alpha,
-//                 pixel.z * alpha + 1.0f - alpha, belta * alpha + 1.0f - alpha};
-//         }
+
+//         result.at<cv::Vec4f>(po[0], po[1]) = {pixel.x * alpha + 1.0f - alpha,
+//                                               pixel.y * alpha + 1.0f - alpha,
+//                                               pixel.z * alpha + 1.0f - alpha, alpha * belta};
 //     });
 
 //     mat_ = result;
@@ -134,18 +132,10 @@ void AvatarGenerator::circle()
     mat_.forEach<Pixel>([&mask, &alphaChannel](Pixel &pixel, const int *po) {
         float &alpha = mask.at<float>(po[0], po[1]);
         float belta = alphaChannel.at<float>(po[0], po[1]);
-        if (alpha != 0.0f && belta != 0.0f)
-        {
-            pixel.x = pixel.x * alpha + 1.0f - alpha;
-            pixel.y = pixel.y * alpha + 1.0f - alpha;
-            pixel.z = pixel.z * alpha + 1.0f - alpha;
-            alpha = belta * alpha + 1.0f - alpha;
-        }
-        else
-        {
-            pixel.x = pixel.y = pixel.z = 1.0f;
-            alpha = 0.0f;
-        }
+        pixel.x = pixel.x * alpha + 1.0f - alpha;
+        pixel.y = pixel.y * alpha + 1.0f - alpha;
+        pixel.z = pixel.z * alpha + 1.0f - alpha;
+        alpha = alpha * belta;
     });
 
     {
@@ -220,6 +210,48 @@ TEST(avatar, mario)
     cv::imshow("original", image);
     cv::imshow("avatar_mario", result);
     cv::waitKey(0);
+}
+
+TEST(avatar, performance)
+{
+#define N 7
+
+    std::array<cv::Mat, N> mats;
+    for (int i = 0; i < mats.size(); ++i)
+    {
+        std::string path = string_format("./data/p%d.png", i);
+        mats[i] = cv::imread(path, CV_LOAD_IMAGE_UNCHANGED);
+    }
+
+    auto start = std::chrono::high_resolution_clock::now();
+
+    std::vector<cv::Mat> results;
+    results.reserve(N * 3);
+    for (auto &image : mats)
+    {
+        {
+            AvatarGenerator ag(image);
+            results.emplace_back(ag.transformImage(32));
+        }
+        {
+            AvatarGenerator ag(image);
+            results.emplace_back(ag.transformImage(64));
+        }
+        {
+            AvatarGenerator ag(image);
+            results.emplace_back(ag.transformImage(128));
+        }
+    }
+
+    auto end = std::chrono::high_resolution_clock::now();
+    auto delta = std::chrono::duration_cast<std::chrono::duration<double>>(end - start);
+    std::cout << "new seconds = " << delta.count() << '\n';
+
+    for (int i = 0; i < results.size(); ++i)
+    {
+        std::string path = string_format("%d-%d.png", i / 3, results[i].rows);
+        imwrite(path, results[i]);
+    }
 }
 
 } // namespace avatar
