@@ -54,6 +54,10 @@ if (NOT FOLLY_LIBRARY)
   list(REMOVE_ITEM SRC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/folly.cpp)
 endif()
 
+if(MSVC)
+  list(REMOVE_ITEM SRC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/openldap.cpp)
+endif()
+
 add_executable(simple ${SRC_FILES})
 target_link_libraries(simple PUBLIC GTest::main ${OPENSSL_LIBRARIES} CURL::libcurl Boost::boost ICU::uc ${OpenCV_LIBS} glog::glog)
 if (FOLLY_LIBRARY)
