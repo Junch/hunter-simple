@@ -35,7 +35,7 @@ static int search_s(LDAP *ld, const char *searchBase, int scope, const char *fil
                                LDAP_NO_LIMIT,  /* sizelimit, no size limit */
                                &searchResult); /* returned results */
 
-    if (rc != LDAP_SUCCESS)
+    if (rc != LDAP_SUCCESS && rc != LDAP_SIZELIMIT_EXCEEDED)
     {
         ldap_msgfree(searchResult);
         ldap_unbind_s(ld);
@@ -300,6 +300,39 @@ TEST(ldap, asynchronous)
     printf("bind successful\n");
 
     rc = search(ld, BASEDN, SCOPE, FILTER);
+    if (rc != LDAP_SUCCESS)
+    {
+        ldap_unbind_ext_s(ld, NULL, NULL);
+        FAIL() << "search failed: " << ldap_err2string(rc);
+        return;
+    }
+
+    ldap_unbind_ext_s(ld, NULL, NULL);
+}
+
+TEST(ldap, annonymous)
+{
+    // http://www.andrew.cmu.edu/course/15-123-kesden/applications/labs/labA/
+
+    int version = LDAP_VERSION3;
+    struct timeval timeOut = {10, 0}; /* 10 second connection timeout */
+    ldap_set_option(NULL, LDAP_OPT_PROTOCOL_VERSION, &version);
+    ldap_set_option(NULL, LDAP_OPT_NETWORK_TIMEOUT, &timeOut);
+
+    LDAP *ld;
+    const char *ldap_host = "ldap://ldap.andrew.cmu.edu";
+    ldap_initialize(&ld, ldap_host);
+
+    int rc = ldap_simple_bind_s(ld, NULL, NULL);
+    if (rc != LDAP_SUCCESS)
+    {
+        printf("ldap_sasl_bind_s: %s\n", ldap_err2string(rc));
+        ldap_unbind_ext_s(ld, NULL, NULL);
+        return;
+    }
+
+    printf("bind successful\n");
+    rc = search_s(ld, "dc=andrew,dc=cmu,dc=edu", SCOPE, "(cmuSpamFlag=FALSE)");
     if (rc != LDAP_SUCCESS)
     {
         ldap_unbind_ext_s(ld, NULL, NULL);
