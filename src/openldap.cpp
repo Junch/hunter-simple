@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <ldap.h>
 #include <string>
+#include <thread>
 
 // http://techsmruti.com/online-ldap-test-server/
 // https://github.com/inspircd/inspircd/blob/master/src/modules/extra/m_ldap.cpp
@@ -100,22 +101,12 @@ TEST(ldap, synchronous)
     ldap_unbind_ext_s(ld, NULL, NULL);
 }
 
-static int search(LDAP *ld, const char *searchBase, int scope, const char *filter)
+static int result(LDAP *ld, int msgid)
 {
-    int msgid;
-    int rc = ldap_search_ext(ld, searchBase, scope, filter, NULL, 0, NULL, NULL, NULL,
-                             LDAP_NO_LIMIT, &msgid);
-    if (rc != LDAP_SUCCESS)
-    {
-        fprintf(stderr, "ldap_search_ext: %s\n", ldap_err2string(rc));
-        ldap_unbind(ld);
-        return 1;
-    }
-
     /* Poll the server for the results of the search operation.
-       Passing LDAP_MSG_ONE indicates that you want to receive
-       the entries one at a time, as they come in. If the next
-       entry that you retrieve is NULL, there are no more entries. */
+        Passing LDAP_MSG_ONE indicates that you want to receive
+        the entries one at a time, as they come in. If the next
+        entry that you retrieve is NULL, there are no more entries. */
     bool finished = false;
     struct timeval zerotime = {0, 0};
     int num_entries = 0;
@@ -125,7 +116,7 @@ static int search(LDAP *ld, const char *searchBase, int scope, const char *filte
         LDAPMessage *res = NULL;
         BerElement *ber = NULL;
 
-        rc = ldap_result(ld, msgid, LDAP_MSG_ONE, &zerotime, &res);
+        int rc = ldap_result(ld, msgid, LDAP_MSG_ONE, &zerotime, &res);
         /* The server can return three types of results back to the client,
            and the return value of ldap_result() indicates the result type:
            LDAP_RES_SEARCH_ENTRY identifies an entry found by the search,
@@ -272,6 +263,20 @@ static int search(LDAP *ld, const char *searchBase, int scope, const char *filte
     return LDAP_SUCCESS;
 }
 
+static int search(LDAP *ld, const char *searchBase, int scope, const char *filter, int *msgid)
+{
+    int rc = ldap_search_ext(ld, searchBase, scope, filter, NULL, 0, NULL, NULL, NULL,
+                             LDAP_NO_LIMIT, msgid);
+    if (rc != LDAP_SUCCESS)
+    {
+        fprintf(stderr, "ldap_search_ext: %s\n", ldap_err2string(rc));
+        ldap_unbind(ld);
+        return 1;
+    }
+
+    return rc;
+}
+
 TEST(ldap, asynchronous)
 {
     int version = LDAP_VERSION3;
@@ -299,13 +304,15 @@ TEST(ldap, asynchronous)
 
     printf("bind successful\n");
 
-    rc = search(ld, BASEDN, SCOPE, FILTER);
+    int msgid;
+    rc = search(ld, BASEDN, SCOPE, FILTER, &msgid);
     if (rc != LDAP_SUCCESS)
     {
-        ldap_unbind_ext_s(ld, NULL, NULL);
-        FAIL() << "search failed: " << ldap_err2string(rc);
         return;
     }
+
+    std::thread result_task(result, ld, msgid);
+    result_task.join();
 
     ldap_unbind_ext_s(ld, NULL, NULL);
 }
