@@ -1,6 +1,24 @@
 #include <gtest/gtest.h>
 #include <opencv2/highgui/highgui_c.h>
 #include <opencv2/opencv.hpp>
+#include <chrono>
+
+bool matIsEqual(const cv::Mat& mat1, const cv::Mat& mat2){
+    // https://stackoverflow.com/questions/9905093/how-to-check-whether-two-matrixes-are-identical-in-opencv
+
+    // treat two empty mat as identical as well
+    if (mat1.empty() && mat2.empty()) {
+        return true;
+    }
+    // if dimensionality of two mat is not identical, these two mat is not identical
+    if (mat1.cols != mat2.cols || mat1.rows != mat2.rows || mat1.dims != mat2.dims) {
+        return false;
+    }
+    cv::Mat diff;
+    cv::compare(mat1, mat2, diff, cv::CMP_NE);
+    int nz = cv::countNonZero(diff);
+    return nz==0;
+}
 
 TEST(opencv, load_image)
 {
@@ -106,6 +124,10 @@ TEST(opencv, gray_image)
     cv::waitKey(0);
 }
 
+///////////////////////////////////////////////////////////////////////////////
+// Title: Parallel Pixel Access in OpenCV using forEach
+// Web: https://www.learnopencv.com/parallel-pixel-access-in-opencv-using-foreach/
+///////////////////////////////////////////////////////////////////////////////
 TEST(opencv, forEach_1_channel)
 {
     typedef cv::Point3_<uint8_t> Pixel;
@@ -127,4 +149,50 @@ TEST(opencv, forEach_4_channel)
 
             printf("[%d, %d] = %d %d %d %d\n", position[0], position[1], v[0], v[1], v[2], v[3]);
     });
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Title: OpenCV Transparent API
+// Web: https://www.learnopencv.com/opencv-transparent-api
+///////////////////////////////////////////////////////////////////////////////
+TEST(opencv, transparent_legacy)
+{
+    cv::Mat img, gray;
+    img = cv::imread("./data/lena.jpg", cv::IMREAD_COLOR);
+
+    auto start = std::chrono::high_resolution_clock::now();
+    cvtColor(img, gray, cv::COLOR_BGR2GRAY);
+    GaussianBlur(gray, gray, cv::Size(7, 7), 1.5);
+    Canny(gray, gray, 0, 50);
+    auto end = std::chrono::high_resolution_clock::now();
+    auto delta = std::chrono::duration_cast<std::chrono::duration<double>>(end - start);
+    std::cout << "seconds = " << delta.count() << '\n';
+
+    imshow("edges", gray);
+    cv::waitKey();
+}
+
+TEST(opencv, transparent)
+{
+    cv::UMat img, gray;
+    cv::imread("./data/lena.jpg", cv::IMREAD_COLOR).copyTo(img);
+
+    auto start = std::chrono::high_resolution_clock::now();
+    cvtColor(img, gray, cv::COLOR_BGR2GRAY);
+    GaussianBlur(gray, gray, cv::Size(7, 7), 1.5);
+    Canny(gray, gray, 0, 50);
+    auto end = std::chrono::high_resolution_clock::now();
+    auto delta = std::chrono::duration_cast<std::chrono::duration<double>>(end - start);
+    std::cout << "seconds = " << delta.count() << '\n';
+
+    imshow("edges", gray);
+    cv::waitKey();
+}
+
+TEST(opencv, version)
+{
+    std::cout << "OpenCV version : " << CV_VERSION << '\n';
+    std::cout << "Major version : " << CV_MAJOR_VERSION << '\n';
+    std::cout << "Minor version : " << CV_MINOR_VERSION << '\n';
+    std::cout << "Subminor version : " << CV_SUBMINOR_VERSION << '\n';
 }
