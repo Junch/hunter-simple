@@ -1,3 +1,6 @@
 [submodule "di"]
 	path = di
 	url = https://github.com/boost-experimental/di.git
+[submodule "RxCpp"]
+	path = RxCpp
+	url = git@github.com:ReactiveX/RxCpp.git

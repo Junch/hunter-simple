@@ -45,6 +45,7 @@ find_package(glog CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
 include_directories("${OPENSSL_INCLUDE_DIR}")
 include_directories("di/include")
+include_directories("RxCpp/Rx/v2/src")
 
 #CMake doesn't generate compile_commands.json on Windows when the compiler is from VS
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
