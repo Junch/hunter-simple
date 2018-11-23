@@ -4,7 +4,7 @@
 #include <thread>
 using namespace std::chrono_literals;
 
-std::atomic<bool> ready = false;
+std::atomic<bool> ready{false};
 TEST(predicate, not_timeout)
 {
     ready = false;
