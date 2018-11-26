@@ -46,6 +46,7 @@ find_package(nlohmann_json CONFIG REQUIRED)
 include_directories("${OPENSSL_INCLUDE_DIR}")
 include_directories("di/include")
 include_directories("RxCpp/Rx/v2/src")
+add_subdirectory(yaml-cpp)
 
 #CMake doesn't generate compile_commands.json on Windows when the compiler is from VS
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -62,7 +63,7 @@ if(MSVC)
 endif()
 
 add_executable(simple ${SRC_FILES})
-target_link_libraries(simple PUBLIC GTest::main ${OPENSSL_LIBRARIES} CURL::libcurl Boost::boost ICU::uc ${OpenCV_LIBS} glog::glog nlohmann_json)
+target_link_libraries(simple PUBLIC GTest::main ${OPENSSL_LIBRARIES} CURL::libcurl Boost::boost ICU::uc ${OpenCV_LIBS} glog::glog nlohmann_json yaml-cpp)
 if (FOLLY_LIBRARY)
   target_link_libraries(simple PUBLIC ${FOLLY_LIBRARY})
 endif()
