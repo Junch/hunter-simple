@@ -46,6 +46,7 @@ find_package(nlohmann_json CONFIG REQUIRED)
 include_directories("${OPENSSL_INCLUDE_DIR}")
 include_directories("di/include")
 include_directories("RxCpp/Rx/v2/src")
+include_directories("rang/include")
 add_subdirectory(yaml-cpp)
 
 #CMake doesn't generate compile_commands.json on Windows when the compiler is from VS

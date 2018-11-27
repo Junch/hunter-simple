@@ -7,3 +7,6 @@
 [submodule "yaml-cpp"]
 	path = yaml-cpp
 	url = git@github.com:jbeder/yaml-cpp.git
+[submodule "rang"]
+	path = rang
+	url = git@github.com:agauniyal/rang.git
