@@ -1,7 +1,9 @@
+#include <future>
 #include <gtest/gtest.h>
 #include <ldap.h>
 #include <string>
 #include <thread>
+#include <yaml-cpp/yaml.h>
 
 // http://techsmruti.com/online-ldap-test-server/
 // https://github.com/inspircd/inspircd/blob/master/src/modules/extra/m_ldap.cpp
@@ -346,6 +348,112 @@ TEST(ldap, annonymous)
         FAIL() << "search failed: " << ldap_err2string(rc);
         return;
     }
+
+    ldap_unbind_ext_s(ld, NULL, NULL);
+}
+
+// https://www.ibm.com/support/knowledgecenter/en/SSLTBW_2.1.0/com.ibm.zos.v2r1.glpa100/createpagec.htm
+// ldap_create_page_control
+
+struct LdapConfiguration
+{
+    std::string mPrimaryServer;
+    std::string mSearchBase;
+    std::string mUsername;
+    std::string mPassword;
+    std::string mFilter;
+    bool mUseSSL;
+};
+
+namespace YAML
+{
+template <> struct convert<LdapConfiguration>
+{
+    static bool decode(const Node &node, LdapConfiguration &rhs)
+    {
+        rhs.mPrimaryServer = node["PrimaryServerName"].as<std::string>();
+        rhs.mSearchBase = node["SearchBase"].as<std::string>();
+        rhs.mUsername = node["Username"].as<std::string>();
+        rhs.mPassword = node["Password"].as<std::string>();
+        rhs.mFilter = node["Filter"].as<std::string>();
+        rhs.mUseSSL = node["UseSSL"].as<bool>();
+        return true;
+    }
+};
+} // namespace YAML
+
+int findNode(const YAML::Node &doc)
+{
+    std::string case_name =
+        ::testing::UnitTest::GetInstance()->current_test_info()->test_case_name();
+    std::string test_name =
+        case_name + "." + ::testing::UnitTest::GetInstance()->current_test_info()->name();
+
+    for (unsigned i = 0; i < doc.size(); i++)
+    {
+        if (doc[i]["test"].as<std::string>() == test_name)
+        {
+            return i;
+        }
+    }
+
+    return -1;
+}
+
+TEST(ldap, config)
+{
+    YAML::Node doc = YAML::LoadFile("./data/hunter.yaml");
+    int index = findNode(doc);
+    if (-1 == index)
+    {
+        FAIL() << "config for the test is not found";
+    }
+    LdapConfiguration config = doc[index].as<LdapConfiguration>();
+
+    int version = LDAP_VERSION3;
+    struct timeval timeOut = {10, 0}; /* 10 second connection timeout */
+    ldap_set_option(NULL, LDAP_OPT_PROTOCOL_VERSION, &version);
+    ldap_set_option(NULL, LDAP_OPT_NETWORK_TIMEOUT, &timeOut);
+
+    std::string url;
+    if (config.mUseSSL)
+    {
+        url = "ldaps://" + config.mPrimaryServer;
+    }
+    else
+    {
+        url = "ldap://" + config.mPrimaryServer;
+    }
+
+    LDAP *ld;
+    ldap_initialize(&ld, url.c_str());
+
+    const char *binddn = config.mUsername.c_str();
+    struct berval cred;
+    char *password = const_cast<char *>(config.mPassword.c_str());
+    cred.bv_val = password;
+    cred.bv_len = config.mPassword.length();
+
+    int rc = ldap_sasl_bind_s(ld, binddn, LDAP_SASL_SIMPLE, &cred, NULL, NULL, NULL);
+    if (rc != LDAP_SUCCESS)
+    {
+        printf("ldap_sasl_bind_s: %s\n", ldap_err2string(rc));
+        ldap_unbind_ext_s(ld, NULL, NULL);
+        return;
+    }
+
+    printf("bind successful\n");
+
+    int msgid;
+    rc = search(ld, config.mSearchBase.c_str(), LDAP_SCOPE_SUBTREE, config.mFilter.c_str(), &msgid);
+    if (rc != LDAP_SUCCESS)
+    {
+        return;
+    }
+
+    // https://eli.thegreenplace.net/2016/the-promises-and-challenges-of-stdasync-task-based-parallelism-in-c11/
+    std::future<int> res = std::async(std::launch::async, result, ld, msgid);
+    ASSERT_EQ(0, res.get());
 
     ldap_unbind_ext_s(ld, NULL, NULL);
 }
