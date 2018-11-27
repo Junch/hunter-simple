@@ -265,9 +265,9 @@ static int result(LDAP *ld, int msgid)
     return LDAP_SUCCESS;
 }
 
-static int search(LDAP *ld, const char *searchBase, int scope, const char *filter, int *msgid)
+static int search(LDAP *ld, const char *searchBase, int scope, const char *filter, char **attrs, int *msgid)
 {
-    int rc = ldap_search_ext(ld, searchBase, scope, filter, NULL, 0, NULL, NULL, NULL,
+    int rc = ldap_search_ext(ld, searchBase, scope, filter, attrs, 0, NULL, NULL, NULL,
                              LDAP_NO_LIMIT, msgid);
     if (rc != LDAP_SUCCESS)
     {
@@ -307,7 +307,7 @@ TEST(ldap, asynchronous)
     printf("bind successful\n");
 
     int msgid;
-    rc = search(ld, BASEDN, SCOPE, FILTER, &msgid);
+    rc = search(ld, BASEDN, SCOPE, FILTER, NULL, &msgid);
     if (rc != LDAP_SUCCESS)
     {
         return;
@@ -362,6 +362,7 @@ struct LdapConfiguration
     std::string mUsername;
     std::string mPassword;
     std::string mFilter;
+    std::vector<std::string> mAttributes;
     bool mUseSSL;
 };
 
@@ -377,6 +378,7 @@ template <> struct convert<LdapConfiguration>
         rhs.mPassword = node["Password"].as<std::string>();
         rhs.mFilter = node["Filter"].as<std::string>();
         rhs.mUseSSL = node["UseSSL"].as<bool>();
+        rhs.mAttributes = node["Attributes"].as<std::vector<std::string>>();
         return true;
     }
 };
@@ -391,13 +393,28 @@ int findNode(const YAML::Node &doc)
 
     for (unsigned i = 0; i < doc.size(); i++)
     {
-        if (doc[i]["test"].as<std::string>() == test_name)
+        if (doc[i]["id"].as<std::string>() == test_name)
         {
             return i;
         }
     }
 
     return -1;
+}
+
+char ** getAttributes(const std::vector<std::string>& v)
+{
+    char **attrs = (char**)malloc((v.size() + 1) * sizeof(char*)); // the last slot for NULL
+    int index = 0;
+    for (size_t i=0; i<v.size(); ++i)
+    {
+        size_t len = v[i].length();
+        attrs[i] = (char*) malloc( len + 1);
+        strncpy(attrs[i], v[i].c_str(), len);
+        attrs[i][len] = '\0';
+    }
+    attrs[v.size()] = NULL;
+    return attrs;
 }
 
 TEST(ldap, config)
@@ -443,9 +460,10 @@ TEST(ldap, config)
     }
 
     printf("bind successful\n");
+    char **attrs = getAttributes(config.mAttributes);
 
     int msgid;
-    rc = search(ld, config.mSearchBase.c_str(), LDAP_SCOPE_SUBTREE, config.mFilter.c_str(), &msgid);
+    rc = search(ld, config.mSearchBase.c_str(), LDAP_SCOPE_SUBTREE, config.mFilter.c_str(), attrs, &msgid);
     if (rc != LDAP_SUCCESS)
     {
         return;

@@ -1,7 +1,8 @@
-- test: ldap.config
+- id: ldap.config
   PrimaryServerName: ldap.forumsys.com
   UseSSL: false
   SearchBase: dc=example,dc=com
   Username: cn=read-only-admin,dc=example,dc=com
   Password: password
   Filter: "(&(objectClass=person)(cn=*E*))"
+  Attributes: ["mail", "sn", "cn", "telephoneNumber"]
