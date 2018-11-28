@@ -21,16 +21,18 @@
 #define BINDDN "cn=read-only-admin,dc=example,dc=com"
 #define PASSWORD "password"
 
-static int search_s(LDAP *ld, const char *searchBase, int scope, const char *filter)
+static int search_s(LDAP *ld, const char *searchBase, int scope, const char *filter, char **attrs)
 {
     LDAPMessage *searchResult;
     struct timeval timeOut = {10, 0}; /* 10 second connection/search timeout */
+
+    auto start = std::chrono::high_resolution_clock::now();
 
     int rc = ldap_search_ext_s(ld,             /* LDAP session handle */
                                searchBase,     /* container to search */
                                scope,          /* scope to search */
                                filter,         /* filter */
-                               NULL,           /* attrs, return all attributes */
+                               attrs,          /* attrs, return all attributes */
                                0,              /* attrsonly, return attributes and values */
                                NULL,           /* server controls */
                                NULL,           /* client controls */
@@ -45,13 +47,16 @@ static int search_s(LDAP *ld, const char *searchBase, int scope, const char *fil
         return rc;
     }
 
+    auto end = std::chrono::high_resolution_clock::now();
+    auto delta = std::chrono::duration_cast<std::chrono::duration<double>>(end - start);
+    std::cout << "seconds = " << delta.count() << '\n';
+
     const char *sortAttribute = "sn";
     char *dn;
     ldap_sort_entries(ld, &searchResult, sortAttribute, strcmp);
 
     /* Go through the search results by checking entries */
-    for (LDAPMessage *entry = ldap_first_entry(ld, searchResult); entry != NULL;
-         entry = ldap_next_entry(ld, entry))
+    for (LDAPMessage *entry = ldap_first_entry(ld, searchResult); entry != NULL; entry = ldap_next_entry(ld, entry))
     {
         if ((dn = ldap_get_dn(ld, entry)) != NULL)
         {
@@ -92,7 +97,7 @@ TEST(ldap, synchronous)
     }
 
     printf("bind successful\n");
-    rc = search_s(ld, BASEDN, SCOPE, FILTER);
+    rc = search_s(ld, BASEDN, SCOPE, FILTER, NULL);
     if (rc != LDAP_SUCCESS)
     {
         ldap_unbind_ext_s(ld, NULL, NULL);
@@ -159,8 +164,7 @@ static int result(LDAP *ld, int msgid)
             }
 
             /* Iterate through each attribute in the entry. */
-            for (char *a = ldap_first_attribute(ld, res, &ber); a != NULL;
-                 a = ldap_next_attribute(ld, res, ber))
+            for (char *a = ldap_first_attribute(ld, res, &ber); a != NULL; a = ldap_next_attribute(ld, res, ber))
             {
                 /* Get and print all values for each attribute. */
                 char **vals = NULL;
@@ -227,8 +231,7 @@ static int result(LDAP *ld, int msgid)
             char *matched_msg = NULL, *error_msg = NULL;
             LDAPControl **serverctrls;
 
-            int parse_rc =
-                ldap_parse_result(ld, res, &rc, &matched_msg, &error_msg, NULL, &serverctrls, 1);
+            int parse_rc = ldap_parse_result(ld, res, &rc, &matched_msg, &error_msg, NULL, &serverctrls, 1);
             if (parse_rc != LDAP_SUCCESS)
             {
                 fprintf(stderr, "ldap_parse_result: %s\n", ldap_err2string(parse_rc));
@@ -243,8 +246,7 @@ static int result(LDAP *ld, int msgid)
 
                 if (matched_msg != NULL && *matched_msg != '\0')
                 {
-                    fprintf(stderr, "Part of the DN that matches an existing entry: %s\n",
-                            matched_msg);
+                    fprintf(stderr, "Part of the DN that matches an existing entry: %s\n", matched_msg);
                 }
             }
             else
@@ -267,8 +269,7 @@ static int result(LDAP *ld, int msgid)
 
 static int search(LDAP *ld, const char *searchBase, int scope, const char *filter, char **attrs, int *msgid)
 {
-    int rc = ldap_search_ext(ld, searchBase, scope, filter, attrs, 0, NULL, NULL, NULL,
-                             LDAP_NO_LIMIT, msgid);
+    int rc = ldap_search_ext(ld, searchBase, scope, filter, attrs, 0, NULL, NULL, NULL, LDAP_NO_LIMIT, msgid);
     if (rc != LDAP_SUCCESS)
     {
         fprintf(stderr, "ldap_search_ext: %s\n", ldap_err2string(rc));
@@ -313,8 +314,11 @@ TEST(ldap, asynchronous)
         return;
     }
 
-    std::thread result_task(result, ld, msgid);
-    result_task.join();
+    // std::thread result_task(result, ld, msgid);
+    // result_task.join();
+    // https://eli.thegreenplace.net/2016/the-promises-and-challenges-of-stdasync-task-based-parallelism-in-c11/
+    std::future<int> res = std::async(std::launch::async, result, ld, msgid);
+    ASSERT_EQ(0, res.get());
 
     ldap_unbind_ext_s(ld, NULL, NULL);
 }
@@ -341,7 +345,7 @@ TEST(ldap, annonymous)
     }
 
     printf("bind successful\n");
-    rc = search_s(ld, "dc=andrew,dc=cmu,dc=edu", SCOPE, "(cmuSpamFlag=FALSE)");
+    rc = search_s(ld, "dc=andrew,dc=cmu,dc=edu", SCOPE, "(cmuSpamFlag=FALSE)", NULL);
     if (rc != LDAP_SUCCESS)
     {
         ldap_unbind_ext_s(ld, NULL, NULL);
@@ -386,10 +390,8 @@ template <> struct convert<LdapConfiguration>
 
 int findNode(const YAML::Node &doc)
 {
-    std::string case_name =
-        ::testing::UnitTest::GetInstance()->current_test_info()->test_case_name();
-    std::string test_name =
-        case_name + "." + ::testing::UnitTest::GetInstance()->current_test_info()->name();
+    std::string case_name = ::testing::UnitTest::GetInstance()->current_test_info()->test_case_name();
+    std::string test_name = case_name + "." + ::testing::UnitTest::GetInstance()->current_test_info()->name();
 
     for (unsigned i = 0; i < doc.size(); i++)
     {
@@ -402,14 +404,14 @@ int findNode(const YAML::Node &doc)
     return -1;
 }
 
-char ** getAttributes(const std::vector<std::string>& v)
+char **getAttributes(const std::vector<std::string> &v)
 {
-    char **attrs = (char**)malloc((v.size() + 1) * sizeof(char*)); // the last slot for NULL
+    char **attrs = (char **)malloc((v.size() + 1) * sizeof(char *)); // the last slot for NULL
     int index = 0;
-    for (size_t i=0; i<v.size(); ++i)
+    for (size_t i = 0; i < v.size(); ++i)
     {
         size_t len = v[i].length();
-        attrs[i] = (char*) malloc( len + 1);
+        attrs[i] = (char *)malloc(len + 1);
         strncpy(attrs[i], v[i].c_str(), len);
         attrs[i][len] = '\0';
     }
@@ -462,16 +464,69 @@ TEST(ldap, config)
     printf("bind successful\n");
     char **attrs = getAttributes(config.mAttributes);
 
-    int msgid;
-    rc = search(ld, config.mSearchBase.c_str(), LDAP_SCOPE_SUBTREE, config.mFilter.c_str(), attrs, &msgid);
+    rc = search_s(ld, config.mSearchBase.c_str(), LDAP_SCOPE_SUBTREE, config.mFilter.c_str(), attrs);
+
+    // int msgid;
+    // rc = search(ld, config.mSearchBase.c_str(), LDAP_SCOPE_SUBTREE, config.mFilter.c_str(), attrs,
+    //             &msgid);
+    // // https://eli.thegreenplace.net/2016/the-promises-and-challenges-of-stdasync-task-based-parallelism-in-c11/
+    // std::future<int> res = std::async(std::launch::async, result, ld, msgid);
+    // ASSERT_EQ(0, res.get());
+
+    ldap_unbind_ext_s(ld, NULL, NULL);
+}
+
+TEST(ldap, performance)
+{
+    YAML::Node doc = YAML::LoadFile("./data/hunter.yaml");
+    int index = findNode(doc);
+    if (-1 == index)
+    {
+        FAIL() << "config for the test is not found";
+    }
+    LdapConfiguration config = doc[index].as<LdapConfiguration>();
+    std::vector<std::string> filters = doc[index]["Filters"].as<std::vector<std::string>>();
+
+    int version = LDAP_VERSION3;
+    struct timeval timeOut = {10, 0}; /* 10 second connection timeout */
+    ldap_set_option(NULL, LDAP_OPT_PROTOCOL_VERSION, &version);
+    ldap_set_option(NULL, LDAP_OPT_NETWORK_TIMEOUT, &timeOut);
+
+    std::string url;
+    if (config.mUseSSL)
+    {
+        url = "ldaps://" + config.mPrimaryServer;
+    }
+    else
+    {
+        url = "ldap://" + config.mPrimaryServer;
+    }
+
+    LDAP *ld;
+    ldap_initialize(&ld, url.c_str());
+
+    const char *binddn = config.mUsername.c_str();
+    struct berval cred;
+    char *password = const_cast<char *>(config.mPassword.c_str());
+    cred.bv_val = password;
+    cred.bv_len = config.mPassword.length();
+
+    int rc = ldap_sasl_bind_s(ld, binddn, LDAP_SASL_SIMPLE, &cred, NULL, NULL, NULL);
     if (rc != LDAP_SUCCESS)
     {
+        printf("ldap_sasl_bind_s: %s\n", ldap_err2string(rc));
+        ldap_unbind_ext_s(ld, NULL, NULL);
         return;
     }
 
-    // https://eli.thegreenplace.net/2016/the-promises-and-challenges-of-stdasync-task-based-parallelism-in-c11/
-    std::future<int> res = std::async(std::launch::async, result, ld, msgid);
-    ASSERT_EQ(0, res.get());
+    printf("bind successful\n");
+    char **attrs = getAttributes(config.mAttributes);
+
+    for (const auto &filter : filters)
+    {
+        std::cout << filter << '\n';
+        search_s(ld, config.mSearchBase.c_str(), LDAP_SCOPE_SUBTREE, filter.c_str(), attrs);
+    }
 
     ldap_unbind_ext_s(ld, NULL, NULL);
 }

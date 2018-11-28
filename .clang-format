@@ -4,5 +4,6 @@ IndentWidth:     4
 ---
 Language:      Cpp
 BreakBeforeBraces: Allman
-ColumnLimit:     100
+ColumnLimit:     128
 NamespaceIndentation: None
+AllowShortFunctionsOnASingleLine: InlineOnly

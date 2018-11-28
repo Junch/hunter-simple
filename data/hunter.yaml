@@ -6,3 +6,23 @@
   Password: password
   Filter: "(&(objectClass=person)(cn=*E*))"
   Attributes: ["mail", "sn", "cn", "telephoneNumber"]
+
+- id: ldap.performance
+  PrimaryServerName: adc-hkg1-c1-2.cisco.com
+  UseSSL: false
+  SearchBase: OU=Employees,OU=Cisco Users,DC=cisco,DC=com
+  # Use the proper values for the Username and Password when running
+  Username:
+  Password: 
+  Filter: ""
+  Attributes: ["sAMAccountName","distinguishedName","displayName", "cn", "givenName", "sn", "displayName", "mail",
+               "title", "telephoneNumber", "mobile", "homePhone", "otherTelephone", "company", "employeeNumber",
+               "location", "streetAddress", "l", "st", "postalCode", "co", "msRTCSIP-PrimaryUserAddress", "mail", "thumbnailPhoto"
+              ]
+  Filters: [
+             "(&(objectCategory=person)(objectClass=user)(|(telephoneNumber=+86 21 2422 4178)(mail=guhua@cisco.com)))",
+             "(&(objectCategory=person)(objectClass=user)(|(telephoneNumber=+86 21 2422 4178)(mail=guhua1@cisco.com)))",
+             "(&(objectCategory=person)(objectClass=user)(|(telephoneNumber=+86 21 2422 41788)(mail=guhua@cisco.com)))",
+             "(&(objectCategory=person)(objectClass=user)(|(telephoneNumber=+86 21 2422 41788)(mail=guhua1@cisco.com)))",
+             "(&(objectCategory=person)(objectClass=user)(|(mobile=+8613361970595)(telephoneNumber=+86 21 2422 4178)))",
+           ]
