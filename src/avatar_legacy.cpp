@@ -135,7 +135,7 @@ TEST(avatar, performance)
     for (int i = 0; i < mats.size(); ++i)
     {
         std::string path = string_format("./data/performance/p%d.png", i);
-        mats[i] = cv::imread(path, CV_LOAD_IMAGE_UNCHANGED);
+        mats[i] = cv::imread(path, cv::IMREAD_UNCHANGED);
     }
 
     auto start = std::chrono::high_resolution_clock::now();
