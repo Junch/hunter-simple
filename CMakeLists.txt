@@ -20,8 +20,11 @@ if(MSVC)
   set(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} /DEBUG /OPT:REF /OPT:ICF")
 endif()
 
-add_compile_options(-std=c++14)
-set (CMAKE_CXX_STANDARD 14)
+# https://github.com/boostorg/system/issues/26
+add_compile_options(-DBOOST_SYSTEM_NO_DEPRECATED -DBOOST_ERROR_CODE_HEADER_ONLY)
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 ### Download dependencies ###
 hunter_add_package(GTest)
