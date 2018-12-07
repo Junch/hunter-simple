@@ -1,7 +1,7 @@
 # Copyright (c) 2014-2016, Ruslan Baratov
 # All rights reserved.
 
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.12)
 
 ### Hunter snapshot that will be used ###
 include("cmake/HunterGate.cmake")
@@ -10,6 +10,9 @@ HunterGate(
   SHA1 "ee80dc91f91f5eb6892f80a0a92c83b4de8e980a"
   LOCAL
 )
+
+include(FetchContent)
+include(cmake/fmt.cmake)
 
 project(HunterSimple)
 
@@ -56,11 +59,6 @@ find_library(FOLLY_LIBRARY folly)
 add_subdirectory(yaml-cpp)
 add_subdirectory(cpprestsdk)
 
-include_directories("${OPENSSL_INCLUDE_DIR}")
-include_directories("di/include")
-include_directories("RxCpp/Rx/v2/src")
-include_directories("rang/include")
-
 #CMake doesn't generate compile_commands.json on Windows when the compiler is from VS
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -79,7 +77,11 @@ add_executable(simple ${SRC_FILES})
 target_link_libraries(simple PUBLIC GTest::main ${OPENSSL_LIBRARIES} CURL::libcurl Boost::boost ICU::uc ${OpenCV_LIBS} nlohmann_json yaml-cpp)
 target_link_libraries(simple PUBLIC double-conversion::double-conversion Libevent::event_core Libevent::event_extra gflags glog::glog)
 target_link_libraries(simple PUBLIC Boost::system Boost::filesystem Boost::date_time Boost::context Boost::program_options Boost::regex Boost::random Boost::atomic)
-target_link_libraries(simple PUBLIC cpprest)
+target_link_libraries(simple PUBLIC cpprest fmt::fmt)
+target_include_directories(simple PUBLIC ${fmt_SOURCE_DIR}/include)
+target_include_directories(simple PUBLIC "rang/include")
+target_include_directories(simple PUBLIC "RxCpp/Rx/v2/src")
+target_include_directories(simple PUBLIC "di/include")
 
 if (FOLLY_LIBRARY)
   target_link_libraries(simple PUBLIC ${FOLLY_LIBRARY})
