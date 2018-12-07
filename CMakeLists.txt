@@ -63,7 +63,9 @@ add_subdirectory(cpprestsdk)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 ### Targets ###
-file(GLOB SRC_FILES ${PROJECT_SOURCE_DIR}/src/*.cpp)
+file(GLOB SRC_FILES ${PROJECT_SOURCE_DIR}/src/*.cpp
+                    ${PROJECT_SOURCE_DIR}/src/rxcpp/*.cpp
+)
 
 if (NOT FOLLY_LIBRARY)
   list(REMOVE_ITEM SRC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/folly.cpp)
