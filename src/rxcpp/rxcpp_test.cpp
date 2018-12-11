@@ -30,6 +30,137 @@ TEST(rxcpp, scratch)
     ints.subscribe([](int v) { printf("OnNext: %d\n", v); }, []() { printf("OnCompleted\n"); });
 }
 
+std::string get_pid() {
+    std::stringstream s;
+    s << std::this_thread::get_id();
+    return s.str();
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Title: Creating Observables from scratch
+// Web: http://reactivex.io/RxCpp/classrxcpp_1_1observable.html#a225ad69622b7c80328bae63232de84b6
+///////////////////////////////////////////////////////////////////////////////
+TEST(rxcpp, subscribe_vs_observe)
+{
+    printf("[thread %s] Start task\n", get_pid().c_str());
+    {
+        auto values = rxcpp::observable<>::range(1, 3).
+            map([](int v){
+                printf("-[thread %s] Emit value %d\n", get_pid().c_str(), v);
+                return v;
+            });
+        values.
+            subscribe_on(rxcpp::synchronize_new_thread()).
+            as_blocking().
+            subscribe(
+                [](int v){printf("-[thread %s] OnNext: %d\n", get_pid().c_str(), v);},
+                [](){printf("-[thread %s] OnCompleted\n", get_pid().c_str());});
+    }
+
+    printf("################################\n");
+
+    {
+        auto values = rxcpp::observable<>::range(1, 3).
+            map([](int v){
+                printf("[thread %s] Emit value %d\n", get_pid().c_str(), v);
+                return v;
+            });
+        values.
+            observe_on(rxcpp::synchronize_new_thread()).
+            as_blocking().
+            subscribe(
+                [](int v){printf("[thread %s] OnNext: %d\n", get_pid().c_str(), v);},
+                [](){printf("[thread %s] OnCompleted\n", get_pid().c_str());});
+    }
+
+    printf("################################\n");
+
+    {
+        auto values = rxcpp::observable<>::range(1, 3).
+            subscribe_on(rxcpp::synchronize_new_thread()).
+            map([](int v){
+                printf("#[thread %s] Emit value %d\n", get_pid().c_str(), v);
+                return v;
+            });
+        values.
+            observe_on(rxcpp::synchronize_new_thread()).
+            as_blocking().
+            subscribe(
+                [](int v){printf("#[thread %s] OnNext: %d\n", get_pid().c_str(), v);},
+                [](){printf("#[thread %s] OnCompleted\n", get_pid().c_str());});
+    }
+
+    printf("[thread %s] Finish task\n", get_pid().c_str());
+}
+
+TEST(rxcpp, blocking)
+{
+    auto values = rxcpp::observable<>::range(1, 3).as_blocking();
+    auto first = values.first();
+    printf("first = %d\n", first);
+}
+
+
+TEST(rxcpp, timer_timepoint)
+{
+    auto start = std::chrono::steady_clock::now() + std::chrono::milliseconds(5000);
+    auto values = rxcpp::observable<>::timer(start);
+    values.
+        subscribe(
+            [](int v){printf("OnNext: %d\n", v);},
+            [](){printf("OnCompleted\n");});
+}
+
+TEST(rxcpp, timer_timepoint_threaded)
+{
+    printf("[thread %s] Start task\n", get_pid().c_str());
+    auto scheduler = rxcpp::observe_on_new_thread();
+    auto start = scheduler.now() + std::chrono::milliseconds(1);
+    auto values = rxcpp::observable<>::timer(start, scheduler);
+    values.
+        as_blocking().
+        subscribe(
+            [](int v){printf("[thread %s] OnNext: %d\n", get_pid().c_str(), v);},
+            [](){printf("[thread %s] OnCompleted\n", get_pid().c_str());});
+    printf("[thread %s] Finish task\n", get_pid().c_str());
+}
+
+TEST(rxcpp, timer_duration)
+{
+    auto period = std::chrono::milliseconds(5000);
+    auto values = rxcpp::observable<>::timer(period);
+    values.
+        subscribe(
+            [](int v){printf("OnNext: %d\n", v);},
+            [](){printf("OnCompleted\n");});
+}
+
+TEST(rxcpp, connect)
+{
+    auto values = rxcpp::observable<>::interval(std::chrono::milliseconds(50), rxcpp::observe_on_new_thread()).
+        take(5).
+        publish();
+    // Subscribe from the beginning
+    values.subscribe(
+        [](long v){printf("[1] OnNext: %ld\n", v);},
+        [](){printf("[1] OnCompleted\n");});
+    // Another subscription from the beginning
+    values.subscribe(
+        [](long v){printf("[2] OnNext: %ld\n", v);},
+        [](){printf("[2] OnCompleted\n");});
+    // Start emitting
+    values.connect();
+
+    // Wait before subscribing
+    rxcpp::observable<>::timer(std::chrono::milliseconds(75)).subscribe([&](long){
+        values.subscribe(
+            [](long v){printf("[3] OnNext: %ld\n", v);},
+            [](){printf("[3] OnCompleted\n");});
+    });
+
+    values.as_blocking().subscribe();
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // Title: Concatenating Observerable Streams
 // Book: C++ Reactive Programming
