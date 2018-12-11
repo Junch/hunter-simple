@@ -3,8 +3,9 @@
 #include <functional>
 #include <string>
 
-#define CAT(a) on ## a ## Changed
-#define CONFIG2METHOD(x) { L#x, [](){ CAT(x)(); } }
+#define WIDEN(x) L ## #x
+#define CAT(x) on ## x ## Changed
+#define CONFIG2METHOD(x) { WIDEN(x), [](){ CAT(x)(); } }
 
 void onDirectoryUriChanged()
 {
@@ -27,6 +28,7 @@ TEST(macro, concat)
     ASSERT_EQ(2, configs.size());
     for (auto& item: configs)
     {
+        std::wcout << item.first << " ==> ";
         item.second();
     }
 }
