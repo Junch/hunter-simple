@@ -67,7 +67,8 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 ### Targets ###
 if (MSVC)
-  file(GLOB SRC_FILES ${PROJECT_SOURCE_DIR}/src/*.cpp)
+  file(GLOB SRC_FILES ${PROJECT_SOURCE_DIR}/src/*.cpp
+                      ${PROJECT_SOURCE_DIR}/src/windows/winsock.cpp)
 else()
   file(GLOB SRC_FILES ${PROJECT_SOURCE_DIR}/src/*.cpp
                       ${PROJECT_SOURCE_DIR}/src/rxcpp/*.cpp)
