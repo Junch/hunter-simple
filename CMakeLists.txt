@@ -57,15 +57,21 @@ find_package(gflags CONFIG REQUIRED)
 find_library(FOLLY_LIBRARY folly)
 
 add_subdirectory(yaml-cpp)
-add_subdirectory(cpprestsdk)
+if(MSVC)
+else()
+  add_subdirectory(cpprestsdk)
+endif()
 
 #CMake doesn't generate compile_commands.json on Windows when the compiler is from VS
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 ### Targets ###
-file(GLOB SRC_FILES ${PROJECT_SOURCE_DIR}/src/*.cpp
-                    ${PROJECT_SOURCE_DIR}/src/rxcpp/*.cpp
-)
+if (MSVC)
+  file(GLOB SRC_FILES ${PROJECT_SOURCE_DIR}/src/*.cpp)
+else()
+  file(GLOB SRC_FILES ${PROJECT_SOURCE_DIR}/src/*.cpp
+                      ${PROJECT_SOURCE_DIR}/src/rxcpp/*.cpp)
+endif()
 
 if (NOT FOLLY_LIBRARY)
   list(REMOVE_ITEM SRC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/folly.cpp)
@@ -73,13 +79,19 @@ endif()
 
 if(MSVC)
   list(REMOVE_ITEM SRC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/openldap.cpp)
+  list(REMOVE_ITEM SRC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/pplxtask_test.cpp)
+  list(REMOVE_ITEM SRC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/cpprest_test.cpp)
+  list(REMOVE_ITEM SRC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/http_client_test.cpp)
 endif()
 
 add_executable(simple ${SRC_FILES})
 target_link_libraries(simple PUBLIC GTest::main ${OPENSSL_LIBRARIES} CURL::libcurl Boost::boost ICU::uc ${OpenCV_LIBS} nlohmann_json yaml-cpp)
-target_link_libraries(simple PUBLIC double-conversion::double-conversion Libevent::event_core Libevent::event_extra gflags glog::glog)
+target_link_libraries(simple PUBLIC double-conversion::double-conversion Libevent::event_core Libevent::event_extra gflags glog::glog fmt::fmt)
 target_link_libraries(simple PUBLIC Boost::system Boost::filesystem Boost::date_time Boost::context Boost::program_options Boost::regex Boost::random Boost::atomic)
-target_link_libraries(simple PUBLIC cpprest fmt::fmt)
+if (MSVC)
+else()
+  target_link_libraries(simple PUBLIC cpprest)
+endif()
 target_include_directories(simple PUBLIC ${fmt_SOURCE_DIR}/include)
 target_include_directories(simple PUBLIC "rang/include")
 target_include_directories(simple PUBLIC "RxCpp/Rx/v2/src")
