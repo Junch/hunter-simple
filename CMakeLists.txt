@@ -86,7 +86,7 @@ if(MSVC)
 endif()
 
 add_executable(simple ${SRC_FILES})
-target_link_libraries(simple PUBLIC GTest::main ${OPENSSL_LIBRARIES} CURL::libcurl Boost::boost ICU::uc ${OpenCV_LIBS} nlohmann_json yaml-cpp)
+target_link_libraries(simple PUBLIC GTest::gtest ${OPENSSL_LIBRARIES} CURL::libcurl Boost::boost ICU::uc ${OpenCV_LIBS} nlohmann_json yaml-cpp)
 target_link_libraries(simple PUBLIC double-conversion::double-conversion Libevent::event_core Libevent::event_extra gflags glog::glog fmt::fmt)
 target_link_libraries(simple PUBLIC Boost::system Boost::filesystem Boost::date_time Boost::context Boost::program_options Boost::regex Boost::random Boost::atomic)
 if (MSVC)
