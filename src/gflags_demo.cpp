@@ -18,6 +18,7 @@ DEFINE_bool(is_master, false, "set if is master");
 // http://dreamrunner.org/blog/2014/03/09/gflags-jian-ming-shi-yong/
 // https://gflags.github.io/gflags/
 // https://blog.csdn.net/chang_mu/article/details/75570782
+// https://www.cnblogs.com/LyndonYoung/articles/7993223.html
 TEST(gflags, simple)
 {
     std::cout << "bind_ip:" << FLAGS_bind_ip << '\n';

@@ -49,12 +49,11 @@ find_package(CURL CONFIG REQUIRED)
 find_package(Boost CONFIG REQUIRED system filesystem context date_time program_options regex random atomic)
 find_package(ICU CONFIG REQUIRED)
 find_package(OpenCV REQUIRED)
+find_package(gflags CONFIG REQUIRED)
 find_package(glog CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
 find_package(double-conversion CONFIG REQUIRED)
 find_package(Libevent CONFIG REQUIRED)
-find_package(gflags CONFIG REQUIRED)
-find_library(FOLLY_LIBRARY folly)
 
 add_subdirectory(yaml-cpp)
 if(MSVC)
@@ -74,9 +73,11 @@ else()
                       ${PROJECT_SOURCE_DIR}/src/rxcpp/*.cpp)
 endif()
 
-if (NOT FOLLY_LIBRARY)
-  list(REMOVE_ITEM SRC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/folly.cpp)
-endif()
+### Don't link to folly temporarily
+### The brew installed folly will conflict with gflags. The error is as below
+### ERROR: flag 'flagfile' was defined more than once (in files '/tmp/gflags-20170916-46768-ftgkio/gflags-2.2.1/src/gflags.cc' 
+### and '/Users/juchen3/.hunter/_Base/ee80dc9/814ec5f/72fe860/Build/gflags/Source/src/gflags.cc').
+list(REMOVE_ITEM SRC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/folly.cpp)
 
 if(MSVC)
   list(REMOVE_ITEM SRC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/openldap.cpp)
@@ -97,10 +98,6 @@ target_include_directories(simple PUBLIC ${fmt_SOURCE_DIR}/include)
 target_include_directories(simple PUBLIC "rang/include")
 target_include_directories(simple PUBLIC "RxCpp/Rx/v2/src")
 target_include_directories(simple PUBLIC "di/include")
-
-if (FOLLY_LIBRARY)
-  target_link_libraries(simple PUBLIC ${FOLLY_LIBRARY})
-endif()
 
 if(CMAKE_HOST_WIN32)
   add_custom_command(TARGET simple POST_BUILD
