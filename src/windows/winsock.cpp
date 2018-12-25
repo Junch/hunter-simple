@@ -56,50 +56,53 @@ TEST(winsock, server)
     if (err == SOCKET_ERROR)
         on_error("listen failed");
 
-    // Accept a client socket
-    SOCKET ClientSocket = accept(ListenSocket, NULL, NULL);
-    if (ClientSocket == INVALID_SOCKET)
-        on_error("accept failed");
-
-    // No longer need server socket
-    closesocket(ListenSocket);
-
-    // Receive until the peer shuts down the connection
-    int iRead;
-    do
+    while (1)
     {
-        char recvbuf[DEFAULT_BUFLEN];
-        int recvbuflen = DEFAULT_BUFLEN;
+        // Accept a client socket
+        SOCKET ClientSocket = accept(ListenSocket, NULL, NULL);
+        if (ClientSocket == INVALID_SOCKET)
+            on_error("accept failed");
 
-        iRead = recv(ClientSocket, recvbuf, recvbuflen, 0);
-        if (iRead > 0)
+        bool keepLooping = true;
+        do
         {
-            printf("Bytes received: %d\n", iRead);
+            char recvbuf[DEFAULT_BUFLEN];
+            int recvbuflen = DEFAULT_BUFLEN;
 
-            // Echo the buffer back to the sender
-            int iSend = send(ClientSocket, recvbuf, iRead, 0);
-            if (iSend == SOCKET_ERROR)
-                on_error("send failed");
+            int iRead = recv(ClientSocket, recvbuf, recvbuflen, 0);
+            if (iRead > 0)
+            {
+                printf("Bytes received: %d\n", iRead);
+                char *pBuf = recvbuf;
+                do
+                {
+                    int iSend = send(ClientSocket, pBuf, iRead, 0);
+                    if (iSend == SOCKET_ERROR)
+                    {
+                        on_error("send failed");
+                        keepLooping = false;
+                        break;
+                    }
 
-            printf("Bytes sent: %d\n", iSend);
-        }
-        else if (iRead == 0)
-        {
-            printf("Connection closing...\n");
-        }
-        else
-        {
-            on_error("recv failed");
-        }
+                    pBuf += iSend;
+                    iRead -= iSend;
+                } while (iRead > 0);
+            }
+            else if (iRead == 0)
+            {
+                printf("Connection closing...\n");
+                break;
+            }
+            else
+            {
+                on_error("recv failed");
+                break;
+            }
 
-    } while (iRead > 0);
+        } while (keepLooping);
 
-    // shutdown the connection since we're done
-    err = shutdown(ClientSocket, SD_SEND);
-    if (iRead == SOCKET_ERROR)
-        on_error("shutdown failed", &err);
+        closesocket(ClientSocket);
+    }
 
-    // cleanup
-    closesocket(ClientSocket);
     WSACleanup();
 }

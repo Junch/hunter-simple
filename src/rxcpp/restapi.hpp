@@ -122,7 +122,7 @@ struct RestApi {
         [&](subscriber<string_t> s){
             json j = obj;
             client
-            .request(methods::PUT, url, j.dump(), U("application/json"))
+            .request(methods::PUT, url, j, U("application/json"))
             .then([](http_response response) -> pplx::task<string_t> {
                 return response.extract_string();
             })

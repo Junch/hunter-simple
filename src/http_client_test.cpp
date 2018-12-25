@@ -21,8 +21,8 @@ static void print_results(json::value const &value)
         auto title = value.at(U("title")).as_string();
         auto body = boost::algorithm::replace_all_copy(value.at(U("body")).as_string(), "\n", "\\n");
 
-        cout << "Post {userId = " << userId << ", id = " << id << ", title = \"" << title << "\", body = \"" << body << "\"}"
-             << endl;
+        ucout << U("Post {userId = ") << userId << U(", id = ") << id << U(", title = \"") << title << U("\", body = \"")
+              << body << U("\"}") << endl;
     }
 }
 
@@ -68,9 +68,9 @@ static void json_post()
     http_client client(U("https://jsonplaceholder.typicode.com/"));
 
     json::value json_v;
-    json_v["userId"] = json::value::number(101);
-    json_v["title"] = json::value::string("test title");
-    json_v["body"] = json::value::string("test body");
+    json_v[U("userId")] = json::value::number(101);
+    json_v[U("title")] = json::value::string(U("test title"));
+    json_v[U("body")] = json::value::string(U("test body"));
 
     client.request(methods::POST, U("posts"), json_v)
         .then([](http_response response) -> pplx::task<string_t> {
@@ -84,7 +84,7 @@ static void json_post()
             try
             {
                 string_t const &v = previousTask.get();
-                cout << v << endl;
+                ucout << v << endl;
             }
             catch (http_exception const &e)
             {
@@ -99,9 +99,9 @@ static void json_update()
     http_client client(U("https://jsonplaceholder.typicode.com/"));
 
     json::value json_v;
-    json_v["userId"] = json::value::number(101);
-    json_v["title"] = json::value::string("test title");
-    json_v["body"] = json::value::string("test body");
+    json_v[U("userId")] = json::value::number(101);
+    json_v[U("title")] = json::value::string(U("test title"));
+    json_v[U("body")] = json::value::string(U("test body"));
 
     client.request(methods::PUT, U("posts/1"), json_v)
         .then([](http_response response) -> pplx::task<string_t> {
@@ -115,7 +115,7 @@ static void json_update()
             try
             {
                 string_t const &v = previousTask.get();
-                cout << v << endl;
+                ucout << v << endl;
             }
             catch (http_exception const &e)
             {
@@ -141,7 +141,7 @@ static void json_delete()
             try
             {
                 string_t const &v = previousTask.get();
-                cout << v << endl;
+                ucout << v << endl;
             }
             catch (http_exception const &e)
             {
