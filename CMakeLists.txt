@@ -89,6 +89,7 @@ target_link_libraries(simple PUBLIC Boost::system Boost::filesystem Boost::date_
 target_link_libraries(simple PUBLIC cpprest)
 
 target_include_directories(simple PUBLIC ${fmt_SOURCE_DIR}/include)
+target_include_directories(simple PUBLIC ${sigslot_SOURCE_DIR}/include)
 target_include_directories(simple PUBLIC "rang/include")
 target_include_directories(simple PUBLIC "RxCpp/Rx/v2/src")
 target_include_directories(simple PUBLIC "di/include")
