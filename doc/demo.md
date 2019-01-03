@@ -18,8 +18,14 @@ date: 2019/01/02
 首先安装Extension：`Markdown Preview Enhanced`，接着需要安装graphviz。
 
 ```bash
+# Windows
 choco install -y graphviz.portable
 dot.exe -V
+
+# Mac
+brew cask install java
+brew install graphviz
+dot -V
 ```
 
 #### Examples
