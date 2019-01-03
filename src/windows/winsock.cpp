@@ -3,6 +3,8 @@
 #include <windows.h>
 #include <winsock2.h>
 #include <ws2tcpip.h>
+#include <functional>
+#include <thread>
 
 #pragma comment(lib, "Ws2_32.lib")
 #define DEFAULT_BUFLEN 512
@@ -17,9 +19,12 @@ void on_error(char *s, int *errCode = NULL)
     FAIL() << s;
 }
 
-// https://docs.microsoft.com/en-us/windows/desktop/winsock/complete-server-code
-// https://stackoverflow.com/questions/31461531/winsock-echo-server-port
-TEST(winsock, server)
+void printCallback(std::string name)
+{
+    printf("name: %s\n", name.c_str());
+}
+
+void runServer(std::function<void(std::string)> callback)
 {
     // Initialize Winsock
     WSADATA wsaData;
@@ -73,6 +78,13 @@ TEST(winsock, server)
             if (iRead > 0)
             {
                 printf("Bytes received: %d\n", iRead);
+                {
+                    std::string s(recvbuf, iRead);
+                    std::thread([=](){
+                        callback(s);
+                    }).detach();
+                }
+
                 char *pBuf = recvbuf;
                 do
                 {
@@ -105,4 +117,11 @@ TEST(winsock, server)
     }
 
     WSACleanup();
+}
+
+// https://docs.microsoft.com/en-us/windows/desktop/winsock/complete-server-code
+// https://stackoverflow.com/questions/31461531/winsock-echo-server-port
+TEST(winsock, server)
+{
+    runServer(printCallback);
 }

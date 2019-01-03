@@ -2,6 +2,7 @@
 #include <gtest/gtest.h>
 #include <map>
 #include <string>
+#include <memory>
 
 #define WIDEN(x) L## #x
 #define CAT(x) on##x##Changed
