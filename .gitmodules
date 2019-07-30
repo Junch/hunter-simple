@@ -10,6 +10,3 @@
 [submodule "rang"]
 	path = rang
 	url = git@github.com:agauniyal/rang.git
-[submodule "cpprestsdk"]
-	path = cpprestsdk
-	url = git@github.com:Microsoft/cpprestsdk.git
