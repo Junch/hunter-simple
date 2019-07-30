@@ -21,7 +21,7 @@ TEST(memory, outofmemory)
             auto *p = new BigData();
         }
     }
-    catch (std::exception &e)
+    catch (std::exception & /* e */)
     {
 #ifdef _WIN32
         __debugbreak();

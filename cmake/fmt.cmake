@@ -11,6 +11,9 @@ if (NOT fmt_POPULATED)
     add_subdirectory(${fmt_SOURCE_DIR} ${fmt_BINARY_DIR})
 endif ()
 
+option(COMPILE_EXAMPLES "Compile optional exemples" OFF)
+option(COMPILE_TESTS "Compile tests" OFF)
+
 FetchContent_Declare(
         sigslot
         GIT_REPOSITORY https://github.com/palacaze/sigslot.git

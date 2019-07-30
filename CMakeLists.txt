@@ -6,9 +6,8 @@ cmake_minimum_required(VERSION 3.12)
 ### Hunter snapshot that will be used ###
 include("cmake/HunterGate.cmake")
 HunterGate(
-  URL "https://github.com/ruslo/hunter/archive/v0.23.58.tar.gz"
-  SHA1 "ee80dc91f91f5eb6892f80a0a92c83b4de8e980a"
-  LOCAL
+  URL "https://github.com/ruslo/hunter/archive/v0.23.205.tar.gz"
+  SHA1 "eba80d3028c856c6bedb5d8d9627b1b3bba19634"
 )
 
 include(FetchContent)
@@ -17,15 +16,17 @@ include(cmake/fmt.cmake)
 project(HunterSimple)
 
 if(MSVC)
-  add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+  add_definitions(/D_CRT_SECURE_NO_WARNINGS /D_SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING /D_SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING)
   set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /Zi")
   # minimize the size or the resulting EXE
   set(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} /DEBUG /OPT:REF /OPT:ICF")
+  # VS2017 (C4996) std::tr1 namespace and TR1-only machinery deprecation
+  # add_compile_options(/D_SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING)
 endif()
 
 # https://github.com/boostorg/system/issues/26
 add_compile_options(-DBOOST_SYSTEM_NO_DEPRECATED -DBOOST_ERROR_CODE_HEADER_ONLY)
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
@@ -55,8 +56,8 @@ find_package(nlohmann_json CONFIG REQUIRED)
 find_package(double-conversion CONFIG REQUIRED)
 find_package(Libevent CONFIG REQUIRED)
 
+option(YAML_CPP_BUILD_TESTS "Enable testing" OFF)
 add_subdirectory(yaml-cpp)
-add_subdirectory(cpprestsdk)
 
 #CMake doesn't generate compile_commands.json on Windows when the compiler is from VS
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -86,15 +87,12 @@ add_executable(simple ${SRC_FILES})
 target_link_libraries(simple PUBLIC GTest::gtest ${OPENSSL_LIBRARIES} CURL::libcurl Boost::boost ICU::uc ${OpenCV_LIBS} nlohmann_json yaml-cpp)
 target_link_libraries(simple PUBLIC double-conversion::double-conversion Libevent::event_core Libevent::event_extra gflags glog::glog fmt::fmt)
 target_link_libraries(simple PUBLIC Boost::system Boost::filesystem Boost::date_time Boost::context Boost::program_options Boost::regex Boost::random Boost::atomic)
-target_link_libraries(simple PUBLIC cpprest)
 
 target_include_directories(simple PUBLIC ${fmt_SOURCE_DIR}/include)
 target_include_directories(simple PUBLIC ${sigslot_SOURCE_DIR}/include)
 target_include_directories(simple PUBLIC "rang/include")
 target_include_directories(simple PUBLIC "RxCpp/Rx/v2/src")
 target_include_directories(simple PUBLIC "di/include")
-target_include_directories(simple PUBLIC "di/include")
-target_include_directories(simple PUBLIC "cpprestsdk/Release/include")
 
 if(CMAKE_HOST_WIN32)
   add_custom_command(TARGET simple POST_BUILD

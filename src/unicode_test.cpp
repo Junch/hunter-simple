@@ -8,7 +8,7 @@
 #include <windows.h>
 #endif
 
-using namespace icu_55;
+using namespace icu_63;
 
 /*
    https://www.zhihu.com/question/55601459 by vczh
