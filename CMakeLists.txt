@@ -62,25 +62,41 @@ add_subdirectory(yaml-cpp)
 #CMake doesn't generate compile_commands.json on Windows when the compiler is from VS
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+set(SRC_FILES ${PROJECT_SOURCE_DIR}/src/avatar.cpp
+  ${PROJECT_SOURCE_DIR}/src/avatar_legacy.cpp
+  ${PROJECT_SOURCE_DIR}/src/boost_system.cpp
+  ${PROJECT_SOURCE_DIR}/src/curl_multi_thread.cpp
+  ${PROJECT_SOURCE_DIR}/src/curl_test.cpp
+  ${PROJECT_SOURCE_DIR}/src/di_test.cpp
+  ${PROJECT_SOURCE_DIR}/src/emplace.cpp
+  ${PROJECT_SOURCE_DIR}/src/fmt_test.cpp
+  ${PROJECT_SOURCE_DIR}/src/gflags_demo.cpp
+  ${PROJECT_SOURCE_DIR}/src/glog_demo.cpp
+  ${PROJECT_SOURCE_DIR}/src/gtest_demo.cpp
+  ${PROJECT_SOURCE_DIR}/src/json_test.cpp
+  ${PROJECT_SOURCE_DIR}/src/macro_test.cpp
+  ${PROJECT_SOURCE_DIR}/src/main.cpp
+  ${PROJECT_SOURCE_DIR}/src/memory.cpp
+  ${PROJECT_SOURCE_DIR}/src/opencv.cpp
+  ${PROJECT_SOURCE_DIR}/src/predicate.cpp
+  ${PROJECT_SOURCE_DIR}/src/predicate_test.cpp
+  ${PROJECT_SOURCE_DIR}/src/rvalue.cpp
+  ${PROJECT_SOURCE_DIR}/src/sigslot_demo.cpp
+  ${PROJECT_SOURCE_DIR}/src/simple.cpp
+  ${PROJECT_SOURCE_DIR}/src/string_format.cpp
+  ${PROJECT_SOURCE_DIR}/src/typeindex.cpp
+  ${PROJECT_SOURCE_DIR}/src/unicode_test.cpp
+  ${PROJECT_SOURCE_DIR}/src/yaml_test.cpp
+)
+
 ### Targets ###
 if (MSVC)
-  file(GLOB SRC_FILES ${PROJECT_SOURCE_DIR}/src/*.cpp
-                      ${PROJECT_SOURCE_DIR}/src/windows/winsock.cpp)
+  list(APPEND SRC_FILES ${PROJECT_SOURCE_DIR}/src/windows/winsock.cpp)
 else()
-  file(GLOB SRC_FILES ${PROJECT_SOURCE_DIR}/src/*.cpp
-                      ${PROJECT_SOURCE_DIR}/src/rxcpp/*.cpp)
-endif()
-
-### Don't link to folly temporarily
-### The brew installed folly will conflict with gflags. The error is as below
-### ERROR: flag 'flagfile' was defined more than once (in files '/tmp/gflags-20170916-46768-ftgkio/gflags-2.2.1/src/gflags.cc' 
-### and '/Users/juchen3/.hunter/_Base/ee80dc9/814ec5f/72fe860/Build/gflags/Source/src/gflags.cc').
-list(REMOVE_ITEM SRC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/folly.cpp)
-
-if(MSVC)
-  list(REMOVE_ITEM SRC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/openldap.cpp)
-  list(REMOVE_ITEM SRC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/cpprest_test.cpp)
-  list(REMOVE_ITEM SRC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/http_client_test.cpp)
+  list(APPEND SRC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/openldap.cpp
+      ${PROJECT_SOURCE_DIR}/src/rxcpp/post.cpp
+      ${PROJECT_SOURCE_DIR}/src/rxcpp/rxcpp_test.cpp
+  )
 endif()
 
 add_executable(simple ${SRC_FILES})
