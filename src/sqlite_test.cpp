@@ -37,7 +37,7 @@ TEST(sqlite, create)
         THROW_IF_FAILED(rc, sqlite3_errmsg(db));
 
         /* Create SQL statement */
-        char *sql = "CREATE TABLE COMPANY("
+        const char *sql = "CREATE TABLE COMPANY("
                     "ID INT PRIMARY KEY     NOT NULL,"
                     "NAME           TEXT    NOT NULL,"
                     "AGE            INT     NOT NULL,"
@@ -169,4 +169,13 @@ TEST(sqlite, delete)
     {
         std::cerr << e.what() << '\n';
     }
+}
+
+TEST(sqlite, api)
+{
+    int safe = sqlite3_threadsafe();
+    printf("threadsfe is %d\n", safe);
+
+    auto ver = sqlite3_libversion();
+    printf("version is %s\n", ver);
 }
