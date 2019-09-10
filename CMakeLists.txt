@@ -42,6 +42,7 @@ hunter_add_package(nlohmann_json)
 hunter_add_package(double-conversion)
 hunter_add_package(Libevent)
 hunter_add_package(gflags)
+hunter_add_package(sqlite3)
 
 ### Find dependencies ###
 find_package(GTest CONFIG REQUIRED) # GTest::main
@@ -55,6 +56,7 @@ find_package(glog CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
 find_package(double-conversion CONFIG REQUIRED)
 find_package(Libevent CONFIG REQUIRED)
+find_package(sqlite3 CONFIG REQUIRED)
 
 option(YAML_CPP_BUILD_TESTS "Enable testing" OFF)
 add_subdirectory(yaml-cpp)
@@ -87,21 +89,22 @@ set(SRC_FILES ${PROJECT_SOURCE_DIR}/src/avatar.cpp
   ${PROJECT_SOURCE_DIR}/src/typeindex.cpp
   ${PROJECT_SOURCE_DIR}/src/unicode_test.cpp
   ${PROJECT_SOURCE_DIR}/src/yaml_test.cpp
+  ${PROJECT_SOURCE_DIR}/src/sqlite_test.cpp
 )
 
 ### Targets ###
 if (MSVC)
-  list(APPEND SRC_FILES ${PROJECT_SOURCE_DIR}/src/windows/winsock.cpp)
+  list(APPEND SRC_FILES src/windows/winsock.cpp
+    src/windows/dns_query.cpp)
 else()
   list(APPEND SRC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/openldap.cpp
-      ${PROJECT_SOURCE_DIR}/src/rxcpp/post.cpp
-      ${PROJECT_SOURCE_DIR}/src/rxcpp/rxcpp_test.cpp
-  )
+    ${PROJECT_SOURCE_DIR}/src/rxcpp/post.cpp
+    ${PROJECT_SOURCE_DIR}/src/rxcpp/rxcpp_test.cpp)
 endif()
 
 add_executable(simple ${SRC_FILES})
 target_link_libraries(simple PUBLIC GTest::gtest ${OPENSSL_LIBRARIES} CURL::libcurl Boost::boost ICU::uc ${OpenCV_LIBS} nlohmann_json yaml-cpp)
-target_link_libraries(simple PUBLIC double-conversion::double-conversion Libevent::event_core Libevent::event_extra gflags glog::glog fmt::fmt)
+target_link_libraries(simple PUBLIC double-conversion::double-conversion Libevent::event_core Libevent::event_extra gflags glog::glog fmt::fmt sqlite3::sqlite3)
 target_link_libraries(simple PUBLIC Boost::system Boost::filesystem Boost::date_time Boost::context Boost::program_options Boost::regex Boost::random Boost::atomic)
 
 target_include_directories(simple PUBLIC ${fmt_SOURCE_DIR}/include)
